@@ -1,0 +1,8 @@
+{
+  "name": "Remix: LALOKHUMED",
+  "description": "Professional medical IV therapy practice in Bryanston, Sandton. Personalized treatments for health, recovery, and performance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

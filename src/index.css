@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+
+  --color-brand-red: #D62828;
+  --color-brand-red-dark: #A82020;
+  --color-brand-grey: #F8F9FA;
+  --color-brand-text: #1A1A1B;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-white text-brand-text antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+.medical-gradient {
+  background: linear-gradient(135deg, #fff 0%, #f1f5f9 100%);
+}

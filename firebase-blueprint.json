@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "Questionnaire": {
+      "title": "Patient Questionnaire",
+      "description": "Medical intake document for patients (IV Therapy or General Intake)",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "dob": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "gender": { "type": "string" },
+        "occupation": { "type": "string" },
+        "address": { "type": "string" },
+        "emergencyContact": { "type": "string" },
+        "idNumber": { "type": "string" },
+        "medicalScheme": { "type": "string" },
+        "membershipNumber": { "type": "string" },
+        "employerAddress": { "type": "string" },
+        "employerContact": { "type": "string" },
+        "medicalConditions": { "type": "string" },
+        "conditionsList": { "type": "string" },
+        "medications": { "type": "string" },
+        "medicationsList": { "type": "string" },
+        "allergies": { "type": "string" },
+        "allergiesList": { "type": "string" },
+        "adverseReactions": { "type": "string" },
+        "reactionsList": { "type": "string" },
+        "medicalDevices": { "type": "string" },
+        "devicesList": { "type": "string" },
+        "pregnancy": { "type": "string" },
+        "conceptionDate": { "type": "string" },
+        "primaryReason": { "type": "string" },
+        "symptomsDuration": { "type": "string" },
+        "desiredOutcome": { "type": "string" },
+        "healthConcerns": { "type": "string" },
+        "pastMedicalHistory": { "type": "string" },
+        "surgeries": { "type": "string" },
+        "familyHistory": { "type": "string" },
+        "sleepQuality": { "type": "string" },
+        "stressLevel": { "type": "string" },
+        "physicalActivity": { "type": "string" },
+        "dietHabits": { "type": "string" },
+        "smoke": { "type": "string" },
+        "smokeAmount": { "type": "string" },
+        "alcohol": { "type": "string" },
+        "waterIntake": { "type": "string" },
+        "previousIv": { "type": "string" },
+        "consent": { "type": "boolean" },
+        "signature": { "type": "string" },
+        "date": { "type": "string" },
+        "formType": { "type": "string" },
+        "formCategory": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "email", "phone", "consent", "signature", "date", "formType"]
+    },
+    "Booking": {
+      "title": "Appointment Booking",
+      "description": "Patient booking request for IV therapy",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "service": { "type": "string" },
+        "preferredTime": { "type": "string" },
+        "preferredDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "email", "phone", "service", "preferredTime", "preferredDate"]
+    },
+    "Admin": {
+      "title": "Administrator",
+      "description": "Authorized staff member",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" }
+      }
+    },
+    "Availability": {
+      "title": "Public Availability",
+      "description": "Publicly visible taken time slots",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "bookingId": { "type": "string" }
+      }
+    },
+    "Notification": {
+      "title": "System Notification",
+      "description": "Outgoing patient communication",
+      "type": "object",
+      "properties": {
+        "bookingId": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "FAQSubmission": {
+      "title": "FAQ Submission",
+      "description": "User submitted questions from the FAQ page",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "question": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "question", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/questionnaires/{questionnaireId}": {
+      "schema": "Questionnaire",
+      "description": "Collection of patient intake questionnaires"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Collection of appointment booking requests"
+    },
+    "/admins/{userId}": {
+      "schema": "Admin",
+      "description": "Authorized clinic administrators"
+    },
+    "/availability/{slotId}": {
+      "schema": "Availability",
+      "description": "Taken time slots for public view"
+    },
+    "/notifications/{noteId}": {
+      "schema": "Notification",
+      "description": "Sent notifications log"
+    },
+    "/faq_submissions/{submissionId}": {
+      "schema": "FAQSubmission",
+      "description": "User submitted questions from the FAQ page"
+    }
+  }
+}
