@@ -5,14 +5,14 @@ import { useState, useEffect } from "react";
 import { SEO } from "../components/Layout";
 
 const heroImages = [
-  "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Site/1ac8e0e4e7f134818ec974e0a9c02b23fb2ff104/public/Home%20Slide%201.png",
-  "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Site/1ac8e0e4e7f134818ec974e0a9c02b23fb2ff104/public/Home%20slide%202.png",
-  "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Site/1ac8e0e4e7f134818ec974e0a9c02b23fb2ff104/public/Home%20Slide%203.png",
-  "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Site/1ac8e0e4e7f134818ec974e0a9c02b23fb2ff104/public/Home%20Slide%204.png"
+  "/Home_Slide_1.png",
+  "/Home_slide_2.png",
+  "/Home_Slide_3.png",
+  "/Home_Slide_4.png"
 ];
 
 const homeImages = {
-  "whyTrust": "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Site/1ac8e0e4e7f134818ec974e0a9c02b23fb2ff104/public/Home%20Section%201.png"
+  "whyTrust": "/Home_Section_1.png"
 };
 
 export default function Home() {
@@ -46,6 +46,17 @@ export default function Home() {
             <motion.img 
               key={heroImages[currentImageIndex]}
               src={heroImages[currentImageIndex]} 
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                const index = currentImageIndex;
+                const fallbackNames = [
+                  "Home%20Slide%201.png",
+                  "Home%20slide%202.png",
+                  "Home%20Slide%203.png",
+                  "Home%20Slide%204.png"
+                ];
+                e.currentTarget.src = `https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/${fallbackNames[index]}`;
+              }}
               alt="Clinic Background" 
               initial={{ opacity: 0, scale: 1.1 }}
               animate={{ opacity: 0.2, scale: 1 }}
@@ -237,6 +248,10 @@ export default function Home() {
               <div className="aspect-square rounded-[3rem] overflow-hidden border-8 border-white/5">
                 <img 
                   src={homeImages.whyTrust} 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Home%20Section%201.png".replace(/ /g, "%20");
+                  }}
                   alt="Professional Healthcare" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

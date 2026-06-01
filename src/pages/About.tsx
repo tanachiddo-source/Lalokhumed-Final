@@ -31,7 +31,11 @@ export default function About() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl">
                 <img 
-                  src="https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Site/1ac8e0e4e7f134818ec974e0a9c02b23fb2ff104/public/About%20IV.png" 
+                  src="/About_IV.png" 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/About%20IV.png".replace(/ /g, "%20");
+                  }}
                   alt="Medical Professional" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

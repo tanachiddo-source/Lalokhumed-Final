@@ -49,16 +49,40 @@ async function ensureAssets() {
 
   const assetsToDownload = [
     {
-      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/2a6d35566ec84d266c6f490fd06a76af122eaed4/Logo%202%20Transparent.png",
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Logo%202%20Transparent.png",
       dest: path.join(publicDir, "Logo_2_Transparent.png")
     },
     {
-      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/2a6d35566ec84d266c6f490fd06a76af122eaed4/Logo%201%20Transparent.png",
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Logo%201%20Transparent.png",
       dest: path.join(publicDir, "Logo_1_Transparent.png")
     },
     {
-      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/2a6d35566ec84d266c6f490fd06a76af122eaed4/Logo%201%20Transparent.png",
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Logo%201%20Transparent.png",
       dest: path.join(publicDir, "favicon.png")
+    },
+    {
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Home%20Slide%201.png",
+      dest: path.join(publicDir, "Home_Slide_1.png")
+    },
+    {
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Home%20slide%202.png",
+      dest: path.join(publicDir, "Home_slide_2.png")
+    },
+    {
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Home%20Slide%203.png",
+      dest: path.join(publicDir, "Home_Slide_3.png")
+    },
+    {
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Home%20Slide%204.png",
+      dest: path.join(publicDir, "Home_Slide_4.png")
+    },
+    {
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Home%20Section%201.png",
+      dest: path.join(publicDir, "Home_Section_1.png")
+    },
+    {
+      url: "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/About%20IV.png",
+      dest: path.join(publicDir, "About_IV.png")
     }
   ];
 

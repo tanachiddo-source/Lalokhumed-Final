@@ -142,7 +142,7 @@ export function Navbar() {
                 src="/Logo_2_Transparent.png" 
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/2a6d35566ec84d266c6f490fd06a76af122eaed4/Logo%202%20Transparent.png".replace(/ /g, "%20");
+                  e.currentTarget.src = "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Logo%202%20Transparent.png".replace(/ /g, "%20");
                 }}
                 alt="Lalokhumed Logo" 
                 className="h-full w-auto object-contain"
@@ -276,7 +276,7 @@ export function Footer() {
                     src="/Logo_2_Transparent.png" 
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/2a6d35566ec84d266c6f490fd06a76af122eaed4/Logo%202%20Transparent.png".replace(/ /g, "%20");
+                      e.currentTarget.src = "https://raw.githubusercontent.com/tanachiddo-source/Lalokhumed-Final/63392fb297c2dc80233ac4a2e0865cccb3eccb02/public/Logo%202%20Transparent.png".replace(/ /g, "%20");
                     }}
                     alt="Lalokhumed Logo" 
                     className="h-full w-auto object-contain"
