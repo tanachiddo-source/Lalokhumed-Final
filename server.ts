@@ -112,7 +112,8 @@ async function startServer() {
   app.post("/api/send-alert", async (req, res) => {
     try {
       const { type, data } = req.body;
-      const adminEmail = process.env.ADMIN_EMAIL || "tanachiddo@gmail.com";
+      const adminEmail = process.env.ADMIN_EMAIL || "admin@lalokhumed.co.za";
+      const infoEmail = process.env.INFO_EMAIL || "info@lalokhumed.co.za";
       const resendApiKey = process.env.RESEND_API_KEY;
 
       if (!resendApiKey) {
@@ -192,16 +193,32 @@ async function startServer() {
       }
 
       const senderEmail = process.env.SENDER_EMAIL || "Lalokhumed Alerts <onboarding@resend.dev>";
-      const recipientEmail = type === "faq_response" ? data.email : adminEmail;
+      const recipientEmail = 
+        type === "faq_response" 
+          ? data.email 
+          : type === "faq_inquiry" 
+            ? infoEmail 
+            : adminEmail;
 
-      const info = await resend.emails.send({
+      console.log(`[LALOKHUMED EMAIL] Attempting to send. Type=${type}, From=${senderEmail}, To=${recipientEmail}`);
+
+      const { data: resendData, error: resendError } = await resend.emails.send({
         from: senderEmail,
         to: recipientEmail,
         subject: subject,
         html: html,
       });
 
-      res.json({ success: true, info });
+      if (resendError) {
+        console.error("[LALOKHUMED EMAIL] Resend error:", resendError);
+        if (senderEmail.includes("onboarding@resend.dev")) {
+          console.warn("[LALOKHUMED EMAIL] WARNING: You are using Resend's default 'onboarding@resend.dev' sender address. Resend constraints prevent sending to custom email addresses like 'admin@lalokhumed.co.za' unless you either register your Resend account with that email, verify the 'lalokhumed.co.za' domain in your Resend dashboard, or configure a verified SENDER_EMAIL.");
+        }
+        return res.status(400).json({ success: false, error: resendError });
+      }
+
+      console.log("[LALOKHUMED EMAIL] Email sent successfully:", resendData);
+      res.json({ success: true, info: resendData });
     } catch (error) {
       console.error("Error sending email:", error);
       res.status(500).json({ error: "Failed to send email" });

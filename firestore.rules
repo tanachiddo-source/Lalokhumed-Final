@@ -16,13 +16,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // THE ADMIN EMAIL: Update 'tanachiddo@gmail.com' to your business email when ready.
-      let masterAdminEmail = 'tanachiddo@gmail.com';
-      
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        request.auth.token.email == masterAdminEmail
-      );
+      // THE ADMIN EMAIL: Only allow the authorized admin account
+      return isSignedIn() && request.auth.token.email == 'admin@lalokhumed.co.za';
     }
 
     function isValidId(id) {

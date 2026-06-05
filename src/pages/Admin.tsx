@@ -17,7 +17,9 @@ import {
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut,
-  User 
+  User,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from "firebase/auth";
 import { db, auth, handleFirestoreError, OperationType } from "@/src/lib/firebase";
 import { 
@@ -39,7 +41,9 @@ import {
   Stethoscope,
   Activity,
   Trash2,
-  HelpCircle
+  HelpCircle,
+  Mail,
+  Key
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
@@ -95,6 +99,10 @@ export default function Admin() {
   const [selectedItem, setSelectedItem] = useState<Booking | Questionnaire | FAQSubmission | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
   
+  // Email & Password Auth states
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  
   // Custom response logic inside details drawer for FAQs
   const [isReplying, setIsReplying] = useState(false);
   const [replyMsg, setReplyMsg] = useState("");
@@ -124,15 +132,17 @@ export default function Admin() {
   }, [successMsg, actionError]);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        // Check if user exists in admins collection
-        try {
-          const adminDoc = await getDoc(doc(db, "admins", user.uid));
-          setIsAdmin(adminDoc.exists());
-        } catch (error) {
-          console.error("Admin check failed:", error);
+        // Strictly only allow admin@lalokhumed.co.za
+        if (user.email === 'admin@lalokhumed.co.za') {
+          setIsAdmin(true);
+        } else {
           setIsAdmin(false);
         }
       } else {
@@ -148,6 +158,9 @@ export default function Admin() {
     const provider = new GoogleAuthProvider();
     setLoginError(null);
     try {
+      if (!auth) {
+        throw new Error("Firebase Auth is currently not initialized. Please ensure your browser supports storage/cookies, or refresh the page.");
+      }
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       console.error("Login failed:", error);
@@ -159,8 +172,44 @@ export default function Admin() {
     }
   };
 
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    if (!auth) {
+      setLoginError("Firebase Auth is currently not initialized.");
+      return;
+    }
+    if (!email || !password) {
+      setLoginError("Please enter both email and password.");
+      return;
+    }
+
+    const sanitizedEmail = email.trim().toLowerCase();
+    if (sanitizedEmail !== "admin@lalokhumed.co.za") {
+      setLoginError("Access Denied: Invalid administrator credentials or unauthorized account.");
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, sanitizedEmail, password);
+    } catch (error: any) {
+      console.error("Email authentication failed:", error);
+      if (error.code === 'auth/operation-not-allowed') {
+        setLoginError("Email/Password auth is not enabled in your Firebase project. Please enable 'Email/Password' provider inside the Firebase console under Authentication > Sign-in method.");
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        setLoginError("Invalid credentials. Please verify your administrator username and password.");
+      } else if (error.code === 'auth/wrong-password') {
+        setLoginError("Incorrect password. Please verify your credentials and try again.");
+      } else {
+        setLoginError(error.message || "Email authentication failed.");
+      }
+    }
+  };
+
   const logout = () => {
-    signOut(auth);
+    if (auth) {
+      signOut(auth);
+    }
   };
 
   const fetchData = async () => {
@@ -488,8 +537,8 @@ export default function Admin() {
             <Lock className="w-10 h-10 text-brand-red" />
           </div>
           <h1 className="text-3xl font-serif mb-4">Admin Access</h1>
-          <p className="text-gray-500 mb-8 leading-relaxed">
-            {user ? "Your account does not have administrator privileges." : "Please sign in with your authorized Google account to access clinical records."}
+          <p className="text-gray-500 mb-6 leading-relaxed text-sm">
+            {user ? "Your account does not have administrator privileges." : "Please authenticate with your secure clinic credentials."}
           </p>
 
           {loginError && (
@@ -499,31 +548,75 @@ export default function Admin() {
                 <p className="font-bold">Authentication Error</p>
               </div>
               <p className="text-xs leading-relaxed">{loginError}</p>
-              <div className="bg-white/50 p-3 rounded-xl border border-red-200/50">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-1">Current Domain to Authorize:</p>
-                <code className="text-[10px] block break-all bg-gray-100 p-2 rounded-lg select-all">
-                  {window.location.hostname}
-                </code>
-              </div>
-              <p className="text-[10px] text-gray-400">
-                To fix: Go to Firebase Console &gt; Auth &gt; Settings &gt; Authorized Domains &gt; Add Domain.
-              </p>
             </div>
           )}
           
           {!user ? (
-            <button 
-              onClick={login}
-              className="w-full bg-brand-red text-white py-4 rounded-full font-bold shadow-lg shadow-brand-red/10 hover:bg-brand-red-dark transition-all flex items-center justify-center gap-3"
-            >
-              Sign in with Google
-            </button>
+            <div className="space-y-6">
+              <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                      <Mail className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:bg-white transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                      <Key className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3 pl-11 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:bg-white transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full bg-brand-red text-white py-3.5 rounded-full font-bold shadow-lg shadow-brand-red/15 hover:bg-brand-red-dark transition-all flex items-center justify-center gap-3 mt-4"
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  Secure Sign In
+                </button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-gray-100 text-left">
+                <div className="flex gap-2 text-gray-400">
+                  <HelpCircle className="w-4 h-4 shrink-0 mt-0.5 text-brand-red/60" />
+                  <div className="text-[10px] leading-relaxed">
+                    <p className="font-bold text-gray-500 uppercase tracking-wider mb-0.5 font-sans">Authorized Access Only</p>
+                    <p className="text-gray-400">This area is strictly restricted to authorized clinic administrators. Unauthorized login attempts are logged.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-2xl text-left border border-gray-100">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Your Admin ID</p>
                 <p className="text-xs font-mono break-all text-gray-700">{user.uid}</p>
-                <p className="text-[10px] text-gray-400 mt-2">Provide this ID to your developer to enable access.</p>
+                <p className="text-[10px] text-gray-400 mt-2">Logged in as {user.email}</p>
               </div>
               <button 
                 onClick={logout}

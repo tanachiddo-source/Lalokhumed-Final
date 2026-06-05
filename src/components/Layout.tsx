@@ -97,17 +97,11 @@ export function Navbar() {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const adminEmail = (import.meta as any).env.VITE_ADMIN_EMAIL || 'tanachiddo@gmail.com';
-        if (user.email === adminEmail) {
+        if (user.email === 'admin@lalokhumed.co.za') {
           setIsAdmin(true);
           return;
         }
-        try {
-          const adminDoc = await getDoc(doc(db, "admins", user.uid));
-          setIsAdmin(adminDoc.exists());
-        } catch (error) {
-          setIsAdmin(false);
-        }
+        setIsAdmin(false);
       } else {
         setIsAdmin(false);
       }
@@ -246,17 +240,11 @@ export function Footer() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const adminEmail = (import.meta as any).env.VITE_ADMIN_EMAIL || 'tanachiddo@gmail.com';
-        if (user.email === adminEmail) {
+        if (user.email === 'admin@lalokhumed.co.za') {
           setIsAdmin(true);
           return;
         }
-        try {
-          const adminDoc = await getDoc(doc(db, "admins", user.uid));
-          setIsAdmin(adminDoc.exists());
-        } catch (error) {
-          setIsAdmin(false);
-        }
+        setIsAdmin(false);
       } else {
         setIsAdmin(false);
       }
@@ -321,8 +309,8 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <Mail className="w-4 h-4 text-brand-red mt-0.5" />
-                <a href="mailto:lalokhumed@gmail.com" className="text-gray-500 text-sm hover:text-brand-red transition-colors">
-                  lalokhumed@gmail.com
+                <a href="mailto:info@lalokhumed.co.za" className="text-gray-500 text-sm hover:text-brand-red transition-colors">
+                  info@lalokhumed.co.za
                 </a>
               </li>
               <li className="flex items-start gap-3">

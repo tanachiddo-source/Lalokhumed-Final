@@ -31,22 +31,39 @@ const isStorageSupported = checkStorageSupport();
 let authInstance: any;
 
 try {
-  if (isStorageSupported) {
-    authInstance = initializeAuth(app, {
-      persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
-    });
-  } else {
-    console.warn("Firebase Auth: Storage accesses (localStorage/sessionStorage) are blocked in this iframe. Initialising with inMemoryPersistence only.");
-    authInstance = initializeAuth(app, {
-      persistence: inMemoryPersistence
-    });
-  }
+  // If there's an already initialized instance, retrieve it
+  authInstance = getAuth(app);
 } catch (error) {
-  console.error("Firebase Auth explicit initialisation failed:", error);
+  // If not yet initialized (or if getAuth throws), we try initializing safely
+  const isStorageSupported = checkStorageSupport();
+  try {
+    if (isStorageSupported) {
+      authInstance = initializeAuth(app, {
+        persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
+      });
+    } else {
+      console.warn("Firebase Auth: Storage accesses (localStorage/sessionStorage) are blocked in this iframe. Initialising with inMemoryPersistence only.");
+      authInstance = initializeAuth(app, {
+        persistence: [inMemoryPersistence]
+      });
+    }
+  } catch (initError: any) {
+    console.error("Firebase Auth explicit initialisation failed. Attempting final recovery:", initError);
+    try {
+      authInstance = getAuth(app);
+    } catch (finalError) {
+      console.error("Firebase Auth: Ultimate safety fallback failed.", finalError);
+    }
+  }
+}
+
+// Global safety net to ensure authInstance is NEVER undefined
+if (!authInstance) {
+  console.warn("Firebase Auth: Safety net triggered (standard getAuth).");
   try {
     authInstance = getAuth(app);
-  } catch (secondaryError) {
-    console.error("Firebase Auth: Ultimate safety fallback failed.", secondaryError);
+  } catch (err) {
+    console.error("Firebase Auth critical: default getAuth(app) failed.", err);
   }
 }
 

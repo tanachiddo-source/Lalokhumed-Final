@@ -150,8 +150,8 @@ export default function About() {
                    <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-brand-red shrink-0 group-hover:bg-brand-red group-hover:text-white transition-all"><Mail /></div>
                    <div>
                      <p className="font-bold text-gray-200">Email</p>
-                     <a href="mailto:lalokhumed@gmail.com" className="text-gray-400 text-sm hover:text-brand-red transition-colors">
-                       lalokhumed@gmail.com
+                     <a href="mailto:info@lalokhumed.co.za" className="text-gray-400 text-sm hover:text-brand-red transition-colors">
+                       info@lalokhumed.co.za
                      </a>
                    </div>
                  </div>

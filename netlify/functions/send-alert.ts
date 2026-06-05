@@ -8,7 +8,8 @@ const handler: Handler = async (event, context) => {
   }
 
     const resendApiKey = process.env.RESEND_API_KEY;
-    const adminEmail = process.env.ADMIN_EMAIL || "tanachiddo@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@lalokhumed.co.za";
+    const infoEmail = process.env.INFO_EMAIL || "info@lalokhumed.co.za";
 
     if (!resendApiKey) {
       console.error("RESEND_API_KEY environment variable is missing.");
@@ -101,7 +102,12 @@ const handler: Handler = async (event, context) => {
     }
 
     const senderEmail = process.env.SENDER_EMAIL || "Lalokhumed Alerts <onboarding@resend.dev>";
-    const recipientEmail = type === "faq_response" ? data.email : adminEmail;
+    const recipientEmail = 
+      type === "faq_response" 
+        ? data.email 
+        : type === "faq_inquiry" 
+          ? infoEmail 
+          : adminEmail;
     console.log(`Email details: Type=${type}, From=${senderEmail}, To=${recipientEmail}`);
     
     const { data: resendData, error: resendError } = await resend.emails.send({
