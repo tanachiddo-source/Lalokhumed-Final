@@ -101,7 +101,7 @@ const handler: Handler = async (event, context) => {
       `;
     }
 
-    const senderEmail = process.env.SENDER_EMAIL || "Lalokhumed Alerts <onboarding@resend.dev>";
+    const senderEmail = process.env.SENDER_EMAIL || "Lalokhumed Alerts <alerts@lalokhumed.co.za>";
     const recipientEmail = 
       type === "faq_response" 
         ? data.email 
