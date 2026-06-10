@@ -142,7 +142,7 @@ export default function About() {
                      <div className="text-gray-400 text-sm">
                        
                        
-                       <a href="tel:+27678853687" className="hover:text-brand-red transition-colors">+27 678 853 687</a>
+                       <a href="tel:+27872559066" className="hover:text-brand-red transition-colors">+27 87 255 9066</a>
                      </div>
                    </div>
                  </div>

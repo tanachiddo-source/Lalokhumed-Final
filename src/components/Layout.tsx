@@ -30,7 +30,7 @@ export function SEO({
     "image": "https://lalokhumed.co.za/favicon.png",
     "@id": "https://lalokhumed.co.za",
     "url": "https://lalokhumed.co.za",
-    "telephone": "+27678853687",
+    "telephone": "+27872559066",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "273 Bryanston Drive, Bryanston",
@@ -316,7 +316,7 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <Phone className="w-4 h-4 text-brand-red mt-0.5" />
                 <div className="text-gray-500 text-sm flex flex-col gap-1">
-                  <a href="tel:+27678853687" className="hover:text-brand-red transition-colors">+27 678 853 687</a>
+                  <a href="tel:+27872559066" className="hover:text-brand-red transition-colors">+27 87 255 9066</a>
                 </div>
               </li>
               <li className="flex items-start gap-3">
