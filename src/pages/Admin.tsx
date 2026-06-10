@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import { downloadQuestionnairePDF } from "@/src/utils/pdfGenerator";
 
 type Booking = {
   id: string;
@@ -855,6 +856,15 @@ export default function Admin() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {activeTab === 'questionnaires' && (
+                          <button 
+                            onClick={() => downloadQuestionnairePDF(item as any)}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-all"
+                            title="Download PDF"
+                          >
+                            <Download className="w-5 h-5" />
+                          </button>
+                        )}
                         <button 
                           onClick={() => {
                             setIsReplying(false);
@@ -974,6 +984,16 @@ export default function Admin() {
                           className="flex items-center gap-2 bg-gray-50 text-gray-400 px-5 py-2.5 rounded-full text-xs font-bold hover:text-red-600 hover:bg-red-50 transition-all border border-gray-100 disabled:opacity-50"
                         >
                           {isDeleting === selectedItem.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete
+                        </button>
+                      </div>
+                    )}
+                    {activeTab === 'questionnaires' && (
+                      <div className="flex flex-wrap gap-2">
+                        <button 
+                          onClick={() => downloadQuestionnairePDF(selectedItem as any)}
+                          className="flex items-center gap-2 bg-brand-red text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-brand-red-dark transition-all border border-brand-red shadow-sm"
+                        >
+                          <Download className="w-4 h-4" /> Download PDF Form
                         </button>
                       </div>
                     )}
@@ -1204,10 +1224,19 @@ export default function Admin() {
                     )}
                   </div>
                 </div>
-                <div className="p-8 border-t border-gray-50 text-center">
+                <div className="p-8 border-t border-gray-50 flex items-center justify-center gap-4">
+                  {activeTab === 'questionnaires' && (
+                    <button 
+                      onClick={() => downloadQuestionnairePDF(selectedItem as any)}
+                      className="bg-brand-red text-white py-3.5 px-8 rounded-full font-bold shadow-lg shadow-brand-red/15 hover:bg-brand-red-dark transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Patient File (PDF)
+                    </button>
+                  )}
                   <button 
                     onClick={() => setSelectedItem(null)}
-                    className="text-gray-500 font-bold px-12 py-3 rounded-full hover:bg-gray-50 transition-all"
+                    className="text-gray-500 font-bold px-12 py-3.5 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all text-sm"
                   >
                     Close
                   </button>

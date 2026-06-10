@@ -17,6 +17,7 @@ import Questionnaire from "./pages/Questionnaire";
 import Admin from "./pages/Admin";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import Welcome from "./pages/Welcome";
 import { useEffect } from "react";
 
 function ScrollToTop() {
@@ -42,23 +43,44 @@ function AnimatedRoutes() {
         <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
         <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
         <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
+        <Route path="/welcome" element={<PageTransition><Welcome /></PageTransition>} />
       </Routes>
     </AnimatePresence>
+  );
+}
+
+function AppContent() {
+  const location = useLocation();
+  const isWelcomePage = location.pathname === "/welcome";
+
+  if (isWelcomePage) {
+    return (
+      <div className="flex flex-col min-h-screen bg-neutral-50/60">
+        <ScrollToTop />
+        <main className="flex-grow">
+          <AnimatedRoutes />
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <ScrollToTop />
+      <Navbar />
+      <main className="flex-grow">
+        <AnimatedRoutes />
+      </main>
+      <Footer />
+      <StickyCTA />
+    </div>
   );
 }
 
 export default function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
-        <ScrollToTop />
-        <Navbar />
-        <main className="flex-grow">
-          <AnimatedRoutes />
-        </main>
-        <Footer />
-        <StickyCTA />
-      </div>
+      <AppContent />
     </Router>
   );
 }
