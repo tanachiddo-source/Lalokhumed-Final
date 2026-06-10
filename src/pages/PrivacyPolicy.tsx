@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto px-6 py-20">
+    <div className="min-h-screen bg-white pt-20">
+      <div className="max-w-4xl mx-auto px-6 py-12">
         <Link 
           to="/" 
           className="inline-flex items-center gap-2 text-brand-text/60 hover:text-brand-red transition-colors mb-12 group"
