@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ShieldCheck, Calendar, Clock, MapPin, Loader2, AlertCircle } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { ShieldCheck, Calendar, Clock, MapPin, Loader2, AlertCircle, Heart, Stethoscope } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { db, handleFirestoreError, OperationType } from "@/src/lib/firebase";
 import { collection, doc, setDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
@@ -12,12 +13,25 @@ type BookingData = {
   service: string;
   preferredTime: string;
   preferredDate: string;
+  address?: string;
 };
 
-const TIME_SLOTS = [
+const IN_PRACTICE_TIME_SLOTS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
   "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", 
   "16:00", "16:30"
+];
+
+const CONCIERGE_DAYTIME_SLOTS = [
+  "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"
+];
+
+const CONCIERGE_AFTER_HOURS_SLOTS = [
+  "17:00", "18:00", "19:00"
+];
+
+const CONCIERGE_NIGHT_SLOTS = [
+  "20:00", "21:00"
 ];
 
 export default function Booking() {
@@ -26,7 +40,16 @@ export default function Booking() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
-  const [serviceCategory, setServiceCategory] = useState<'medical' | 'wellness'>('medical');
+  
+  const [searchParams] = useSearchParams();
+  const [serviceCategory, setServiceCategory] = useState<'medical' | 'wellness' | 'concierge'>('medical');
+
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    if (cat === 'medical' || cat === 'wellness' || cat === 'concierge') {
+      setServiceCategory(cat);
+    }
+  }, [searchParams]);
 
   const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<BookingData>();
   
@@ -62,6 +85,33 @@ export default function Booking() {
     "Fertility IV Drip (R980)",
     "NAD Therapy IV Drip (R2,000)"
   ];
+
+  const conciergeServices = [
+    "Daytime Concierge Call-Out (R1,500)",
+    "After-Hours Concierge Call-Out (R2,500)",
+    "Night Concierge Call-Out (R3,500)"
+  ];
+
+  const selectedService = watch("service");
+
+  const getAvailableSlotsForSelection = () => {
+    if (serviceCategory !== 'concierge') {
+      return IN_PRACTICE_TIME_SLOTS;
+    }
+    if (!selectedService) return [];
+    if (selectedService.includes("Daytime")) {
+      return CONCIERGE_DAYTIME_SLOTS;
+    }
+    if (selectedService.includes("After-Hours")) {
+      return CONCIERGE_AFTER_HOURS_SLOTS;
+    }
+    if (selectedService.includes("Night")) {
+      return CONCIERGE_NIGHT_SLOTS;
+    }
+    return [];
+  };
+
+  const availableSlots = getAvailableSlotsForSelection();
 
   useEffect(() => {
     let active = true;
@@ -158,7 +208,8 @@ export default function Booking() {
         email: "Email Address",
         service: "Select Service",
         preferredDate: "Preferred Date",
-        preferredTime: "Preferred Time Slot"
+        preferredTime: "Preferred Time Slot",
+        address: "Physical Address"
       };
       const label = fieldLabels[firstErrorKey as keyof typeof fieldLabels] || firstErrorKey;
       setSubmitError(`Missing required field: ${label}. Please complete all marked fields.`);
@@ -202,10 +253,14 @@ export default function Booking() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
           <div>
             <h1 className="text-5xl md:text-7xl font-serif text-brand-text mb-8 leading-tight">
-              Book Your <span className="text-brand-red italic">Appointment</span>.
+              Book Your <span className="text-brand-red italic">
+                {serviceCategory === 'concierge' ? 'Concierge Visit' : 'Appointment'}
+              </span>.
             </h1>
             <p className="text-xl text-gray-500 mb-12 leading-relaxed">
-              Select your preferred general medical consultation or wellness therapy and schedule a slot. All services are led or supervised by qualified medical practitioners.
+              {serviceCategory === 'concierge' 
+                ? "Our clinical team brings world-class medical consultations and customized IV therapy directly to your Bryanston residence or office with maximum convenience and absolute discretion."
+                : "Select your preferred general medical consultation or wellness therapy and schedule a slot. All services are led or supervised by qualified medical practitioners."}
             </p>
 
             <div className="space-y-8">
@@ -213,21 +268,35 @@ export default function Booking() {
                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-brand-red shadow-sm shrink-0"><Calendar /></div>
                  <div>
                    <p className="font-bold text-brand-text">Flexible Scheduling</p>
-                   <p className="text-gray-500 text-sm">We offer morning and afternoon slots throughout the week.</p>
+                   <p className="text-gray-500 text-sm">
+                     {serviceCategory === 'concierge'
+                       ? "Book morning, twilight, or evening clinical slots at your convenience."
+                       : "We offer morning and afternoon slots throughout the week."}
+                   </p>
                  </div>
                </div>
                <div className="flex gap-6">
                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-brand-red shadow-sm shrink-0"><MapPin /></div>
                  <div>
-                   <p className="font-bold text-brand-text">Central Location</p>
-                   <p className="text-gray-500 text-sm">273 Bryanston Drive, Sandton. Secure parking available.</p>
+                   <p className="font-bold text-brand-text">
+                     {serviceCategory === 'concierge' ? "Bryanston Coverage" : "Central Location"}
+                   </p>
+                   <p className="text-gray-500 text-sm">
+                     {serviceCategory === 'concierge'
+                       ? "Exclusive mobile service strictly dedicated to residences and offices in Bryanston."
+                       : "273 Bryanston Drive, Sandton. Secure parking available."}
+                   </p>
                  </div>
                </div>
                <div className="flex gap-6">
                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-brand-red shadow-sm shrink-0"><ShieldCheck /></div>
                  <div>
                    <p className="font-bold text-brand-text">Doctor Supervised</p>
-                   <p className="text-gray-500 text-sm">Safe, professional, and clinical environment for all clinical procedures.</p>
+                   <p className="text-gray-500 text-sm">
+                     {serviceCategory === 'concierge'
+                       ? "Receive professional clinical consultation and premium IV treatments in absolute safety."
+                       : "Safe, professional, and clinical environment for all clinical procedures."}
+                   </p>
                  </div>
                </div>
             </div>
@@ -262,7 +331,7 @@ export default function Booking() {
 
               <div className="space-y-4">
                 <label className="text-sm font-bold text-gray-700 ml-1">Appointment Category</label>
-                <div className="grid grid-cols-2 p-1 bg-brand-grey rounded-2xl border border-gray-100/50">
+                <div className="grid grid-cols-3 p-1 bg-brand-grey rounded-2xl border border-gray-100/50">
                   <button
                     type="button"
                     onClick={() => {
@@ -270,13 +339,13 @@ export default function Booking() {
                       setValue("service", "", { shouldValidate: false });
                     }}
                     className={cn(
-                      "py-3 text-xs md:text-sm font-bold tracking-wide rounded-xl transition-all duration-300",
+                      "py-3 text-[10px] sm:text-xs md:text-sm font-bold tracking-wide rounded-xl transition-all duration-300",
                       serviceCategory === 'medical' 
                         ? "bg-white text-brand-text shadow-sm" 
                         : "text-gray-400 hover:text-gray-600"
                     )}
                   >
-                    Primary Medical Care
+                    Primary Care
                   </button>
                   <button
                     type="button"
@@ -285,13 +354,28 @@ export default function Booking() {
                       setValue("service", "", { shouldValidate: false });
                     }}
                     className={cn(
-                      "py-3 text-xs md:text-sm font-bold tracking-wide rounded-xl transition-all duration-300",
+                      "py-3 text-[10px] sm:text-xs md:text-sm font-bold tracking-wide rounded-xl transition-all duration-300",
                       serviceCategory === 'wellness' 
                         ? "bg-white text-brand-text shadow-sm" 
                         : "text-gray-400 hover:text-gray-600"
                     )}
                   >
                     Wellness & IVs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServiceCategory('concierge');
+                      setValue("service", "", { shouldValidate: false });
+                    }}
+                    className={cn(
+                      "py-3 text-[10px] sm:text-xs md:text-sm font-bold tracking-wide rounded-xl transition-all duration-300",
+                      serviceCategory === 'concierge' 
+                        ? "bg-white text-brand-text shadow-sm" 
+                        : "text-gray-400 hover:text-gray-600"
+                    )}
+                  >
+                    Concierge
                   </button>
                 </div>
               </div>
@@ -303,8 +387,8 @@ export default function Booking() {
                     {...register("service", { required: true })} 
                     className={`w-full bg-brand-grey border-none rounded-2xl p-4 pr-10 focus:ring-2 focus:ring-brand-red outline-none transition-all appearance-none ${errors.service ? 'ring-2 ring-red-200' : ''}`}
                   >
-                    <option value="">Select {serviceCategory === 'medical' ? 'a medical care service' : 'a wellness or IV treatment'}...</option>
-                    {(serviceCategory === 'medical' ? medicalServices : wellnessServices).map(s => (
+                    <option value="">Select {serviceCategory === 'medical' ? 'a medical care service' : serviceCategory === 'wellness' ? 'a wellness or IV treatment' : 'a concierge rate slot'}...</option>
+                    {(serviceCategory === 'medical' ? medicalServices : serviceCategory === 'wellness' ? wellnessServices : conciergeServices).map(s => (
                       <option key={s} value={s} className="font-sans font-normal text-gray-700 py-1">
                         {s}
                       </option>
@@ -317,6 +401,20 @@ export default function Booking() {
                   </div>
                 </div>
               </div>
+
+              {serviceCategory === 'concierge' && (
+                <div className="space-y-2 animate-fade-in">
+                  <label className="text-sm font-bold text-gray-700 ml-1">Physical Address (Bryanston Only) <span className="text-brand-red">*</span></label>
+                  <textarea 
+                    {...register("address", { required: serviceCategory === 'concierge' })} 
+                    className={`w-full bg-brand-grey border-none rounded-2xl p-4 focus:ring-2 focus:ring-brand-red outline-none transition-all ${errors.address ? 'ring-2 ring-red-200' : ''}`} 
+                    placeholder="e.g. 15 St James Crescent, Bryanston, Sandton"
+                    rows={2}
+                  />
+                  {errors.address && <p className="text-xs text-red-500 ml-1">Physical address is required for concierge visits.</p>}
+                  <p className="text-xs text-gray-400 ml-1 italic">Note: Concierge services are strictly limited to the Bryanston area.</p>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2 italic">
@@ -343,9 +441,15 @@ export default function Booking() {
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="w-6 h-6 text-brand-red animate-spin" />
                   </div>
+                ) : availableSlots.length === 0 ? (
+                  <div className="p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center text-sm text-gray-400">
+                    {serviceCategory === 'concierge' 
+                      ? "Please select a concierge rate slot first to see available times."
+                      : "Please select a service first to see available times."}
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                    {TIME_SLOTS.map((time) => {
+                    {availableSlots.map((time) => {
                       const isBooked = bookedSlots.includes(time);
                       const isSelected = selectedTime === time;
                       
