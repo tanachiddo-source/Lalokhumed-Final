@@ -43,11 +43,21 @@ import {
   Trash2,
   HelpCircle,
   Mail,
-  Key
+  Key,
+  Phone,
+  ExternalLink,
+  Copy,
+  Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
 import { downloadQuestionnairePDF } from "@/src/utils/pdfGenerator";
+import { 
+  formatForWhatsApp, 
+  buildWhatsAppLink, 
+  isValidWhatsAppPhone, 
+  formatDisplayPhone 
+} from "@/src/utils/phoneUtils";
 
 type Booking = {
   id: string;
@@ -116,6 +126,8 @@ export default function Admin() {
     booking: Booking | null
   }>({ show: false, type: 'confirm', booking: null });
   const [customMsg, setCustomMsg] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ show: boolean, id: string | null }>({ show: false, id: null });
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -247,26 +259,50 @@ export default function Admin() {
   const initiateAction = (item: Booking, type: 'confirm' | 'cancel') => {
     let defaultMsg = "";
     if (type === 'confirm') {
-      defaultMsg = `Hello ${item.fullName}, your booking for ${item.service} on ${item.preferredDate} at ${item.preferredTime} is CONFIRMED. We look forward to seeing you.`;
+      defaultMsg = `Hello ${item.fullName}, your booking for ${item.service} on ${item.preferredDate} at ${item.preferredTime} is CONFIRMED. We look forward to seeing you at LALOKHUMED.`;
     } else {
-      defaultMsg = `Hello ${item.fullName}, we are unable to fulfill your booking for ${item.service} on ${item.preferredDate}. [Add suggestion or reason here]`;
+      defaultMsg = `Hello ${item.fullName}, we are unable to fulfill your booking for ${item.service} on ${item.preferredDate}. Please contact us to reschedule at your convenience.`;
     }
     
     setCustomMsg(defaultMsg);
+    setRecipientPhone(item.phone || "");
+    setCopiedLink(false);
+    setActionError(null);
     setCommModal({ show: true, type, booking: item });
   };
 
   const handleSendCommunication = async (sendVia: 'headless' | 'whatsapp') => {
     if (!commModal.booking) return;
-    setIsSending(true);
     
     const item = commModal.booking;
     const status = commModal.type === 'confirm' ? 'confirmed' : 'cancelled';
+    const targetPhone = (recipientPhone.trim() || item.phone || "").trim();
+
+    if (sendVia === 'whatsapp') {
+      if (!isValidWhatsAppPhone(targetPhone)) {
+        setActionError("Please provide a valid phone number (e.g. 082 123 4567 or +27 82 123 4567) before launching WhatsApp.");
+        return;
+      }
+      
+      // Build link with normalized South African / international format (E.164 without leading zeroes)
+      const waLink = buildWhatsAppLink(targetPhone, customMsg);
+      
+      // Open WhatsApp window synchronously right on user click to prevent browser popup blockers from intercepting!
+      try {
+        window.open(waLink, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        console.warn("Could not synchronously trigger window.open:", err);
+      }
+    }
+
+    setIsSending(true);
+    setActionError(null);
 
     try {
-      // 1. Update Booking Status
+      // 1. Update Booking Status & persist corrected phone number if modified
       await updateDoc(doc(db, "bookings", item.id), { 
         status,
+        phone: targetPhone,
         adminNote: customMsg,
         updatedAt: serverTimestamp() 
       });
@@ -283,20 +319,11 @@ export default function Admin() {
         await deleteDoc(availabilityRef);
       }
 
-      // 3. WhatsApp Client Trigger (If selected)
-      if (sendVia === 'whatsapp') {
-        const cleanPhone = item.phone.replace(/\D/g, '');
-        // Handle international prefix if missing (defaulting to ZA +27 for this context if needed, 
-        // but often WhatsApp wa.me handles well if prefix is present or it detects location)
-        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(customMsg)}`;
-        window.open(waLink, '_blank');
-      }
-
-      // 4. Queue Notification for Background Automation Service
+      // 3. Queue Notification for Background Automation Service
       await setDoc(doc(collection(db, "notifications")), {
         bookingId: item.id,
         patientEmail: item.email,
-        patientPhone: item.phone,
+        patientPhone: targetPhone,
         message: customMsg,
         type: commModal.type,
         method: sendVia,
@@ -305,10 +332,16 @@ export default function Admin() {
       });
 
       // Update Local State
-      setBookings(prev => prev.map(b => b.id === item.id ? { ...b, status, adminNote: customMsg } : b));
+      setBookings(prev => prev.map(b => b.id === item.id ? { ...b, phone: targetPhone, status, adminNote: customMsg } : b));
       if (selectedItem && selectedItem.id === item.id) {
-        setSelectedItem({ ...selectedItem, status, adminNote: customMsg } as Booking);
+        setSelectedItem({ ...selectedItem, phone: targetPhone, status, adminNote: customMsg } as Booking);
       }
+
+      setSuccessMsg(
+        status === 'confirmed'
+          ? `Booking confirmed for ${item.fullName}! ${sendVia === 'whatsapp' ? 'WhatsApp conversation opened.' : ''}`
+          : `Booking declined for ${item.fullName}.`
+      );
 
       setCommModal({ show: false, type: 'confirm', booking: null });
       setCustomMsg("");
@@ -1253,66 +1286,184 @@ export default function Admin() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setCommModal({ ...commModal, show: false })}
+                onClick={() => !isSending && setCommModal({ ...commModal, show: false })}
                 className="absolute inset-0 bg-brand-text/80 backdrop-blur-sm"
               />
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl relative overflow-hidden"
+                className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl relative overflow-hidden"
               >
-                <div className="p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center",
-                      commModal.type === 'confirm' ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
-                    )}>
-                      <AlertCircle className="w-5 h-5" />
+                <div className="p-8 md:p-9 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between gap-3 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm",
+                        commModal.type === 'confirm' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      )}>
+                        {commModal.type === 'confirm' ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-serif">
+                          {commModal.type === 'confirm' ? 'Confirm Appointment' : 'Decline Appointment'}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Patient: <strong className="text-gray-800">{commModal.booking.fullName}</strong>
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold">
-                      {commModal.type === 'confirm' ? 'Confirm Booking' : 'Decline Booking'}
-                    </h3>
+                    <button
+                      onClick={() => !isSending && setCommModal({ ...commModal, show: false })}
+                      className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                      <XCircle className="w-6 h-6" />
+                    </button>
                   </div>
 
-                  <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                    This message will be queued for delivery via <strong>Email</strong> and <strong>SMS</strong> to <span className="font-bold text-gray-800">{commModal.booking.fullName}</span>.
-                  </p>
-
-                  <div className="space-y-4">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Message Content</label>
-                    <textarea 
-                      value={customMsg}
-                      onChange={(e) => setCustomMsg(e.target.value)}
-                      rows={5}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-brand-red outline-none resize-none transition-all"
-                    />
+                  {/* Summary Box */}
+                  <div className="bg-brand-grey/50 rounded-2xl p-4 mb-6 border border-gray-100 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Service</p>
+                      <p className="font-semibold text-gray-800 truncate">{commModal.booking.service}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 font-bold uppercase tracking-wider text-[10px]">Preferred Slot</p>
+                      <p className="font-semibold text-gray-800">{commModal.booking.preferredDate} ({commModal.booking.preferredTime})</p>
+                    </div>
                   </div>
 
-                  <div className="mt-8 flex flex-col md:flex-row gap-3">
-                    <button 
-                      onClick={() => setCommModal({ ...commModal, show: false })}
-                      className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-bold hover:bg-gray-200 transition-all font-sans"
-                    >
-                      Close
-                    </button>
-                    
-                    <button 
-                      onClick={() => handleSendCommunication('whatsapp')}
-                      disabled={isSending}
-                      className={cn(
-                        "flex-[2] text-white py-4 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2",
-                        commModal.type === 'confirm' ? "bg-green-600 hover:bg-green-700" :
-                        "bg-red-600 hover:bg-red-700",
-                        isSending ? "opacity-70" : ""
-                      )}
-                    >
-                      {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                        <>
-                          <MessageSquare className="w-5 h-5" /> Send via WhatsApp
-                        </>
-                      )}
-                    </button>
+                  {/* Action error banner */}
+                  {actionError && (
+                    <div className="bg-red-50 text-red-700 border border-red-100 p-4 rounded-2xl mb-6 text-xs flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Cannot Open WhatsApp</p>
+                        <p className="mt-0.5 text-gray-600">{actionError}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-5">
+                    {/* Phone Number Field with live WhatsApp compatibility check */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-brand-red" /> Patient Phone Number
+                        </label>
+                        {isValidWhatsAppPhone(recipientPhone) ? (
+                          <span className="text-[11px] text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-green-200">
+                            <Check className="w-3 h-3" /> WhatsApp: {formatDisplayPhone(recipientPhone)}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1 border border-amber-200">
+                            <AlertCircle className="w-3 h-3" /> SA (+27) or International
+                          </span>
+                        )}
+                      </div>
+                      <input 
+                        type="tel"
+                        value={recipientPhone}
+                        onChange={(e) => {
+                          setRecipientPhone(e.target.value);
+                          if (actionError) setActionError(null);
+                        }}
+                        placeholder="e.g. 082 123 4567 or +27 82 123 4567"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-3.5 text-sm font-medium text-gray-800 focus:bg-white focus:ring-2 focus:ring-brand-red outline-none transition-all"
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1.5 pl-1">
+                        Local South African numbers (e.g. 082...) are automatically formatted into international WhatsApp standard (+27).
+                      </p>
+                    </div>
+
+                    {/* Message Content */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                          Confirmation Message
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(customMsg);
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2500);
+                          }}
+                          className="text-[11px] text-gray-500 hover:text-brand-red font-medium flex items-center gap-1"
+                        >
+                          <Copy className="w-3 h-3" /> {copiedLink ? "Message Copied!" : "Copy Text"}
+                        </button>
+                      </div>
+                      <textarea 
+                        value={customMsg}
+                        onChange={(e) => setCustomMsg(e.target.value)}
+                        rows={4}
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 text-sm text-gray-800 focus:bg-white focus:ring-2 focus:ring-brand-red outline-none resize-none transition-all leading-relaxed"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-8 space-y-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button 
+                        onClick={() => handleSendCommunication('whatsapp')}
+                        disabled={isSending}
+                        className={cn(
+                          "flex-1 text-white py-4 px-6 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 text-sm",
+                          commModal.type === 'confirm' 
+                            ? "bg-green-600 hover:bg-green-700 shadow-green-600/20" 
+                            : "bg-red-600 hover:bg-red-700 shadow-red-600/20",
+                          isSending ? "opacity-70 cursor-not-allowed" : "active:scale-[0.98]"
+                        )}
+                      >
+                        {isSending ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <>
+                            <MessageSquare className="w-4 h-4" />
+                            <span>{commModal.type === 'confirm' ? 'Confirm & Send WhatsApp' : 'Decline & Send WhatsApp'}</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button 
+                        onClick={() => handleSendCommunication('headless')}
+                        disabled={isSending}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 px-5 rounded-2xl font-bold transition-all text-sm flex items-center justify-center gap-2 active:scale-[0.98]"
+                        title="Save confirmation in system and queue background alerts without opening WhatsApp"
+                      >
+                        <CheckCircle className="w-4 h-4 text-gray-500" />
+                        <span>System Only</span>
+                      </button>
+                    </div>
+
+                    {/* Direct clickable fallback link */}
+                    {isValidWhatsAppPhone(recipientPhone) && (
+                      <div className="pt-2 flex items-center justify-center gap-4 text-xs">
+                        <a 
+                          href={buildWhatsAppLink(recipientPhone, customMsg)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-700 hover:text-green-800 font-semibold inline-flex items-center gap-1.5 hover:underline py-1"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> Open Direct WhatsApp Web Link
+                        </a>
+                        <span className="text-gray-300">•</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = buildWhatsAppLink(recipientPhone, customMsg);
+                            navigator.clipboard.writeText(link);
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2500);
+                          }}
+                          className="text-gray-500 hover:text-gray-800 font-medium inline-flex items-center gap-1 py-1"
+                        >
+                          <Copy className="w-3 h-3" /> Copy WhatsApp URL
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

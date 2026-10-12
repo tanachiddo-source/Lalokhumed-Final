@@ -320,7 +320,7 @@ export default function Booking() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 ml-1">Phone Number</label>
-                  <input {...register("phone", { required: true })} className={`w-full bg-brand-grey border-none rounded-2xl p-4 focus:ring-2 focus:ring-brand-red outline-none transition-all ${errors.phone ? 'ring-2 ring-red-200' : ''}`} placeholder="+27 00 000 0000" />
+                  <input {...register("phone", { required: true })} className={`w-full bg-brand-grey border-none rounded-2xl p-4 focus:ring-2 focus:ring-brand-red outline-none transition-all ${errors.phone ? 'ring-2 ring-red-200' : ''}`} placeholder="e.g. 082 123 4567" />
                 </div>
               </div>
 
