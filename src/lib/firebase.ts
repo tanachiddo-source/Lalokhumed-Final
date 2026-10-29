@@ -6,7 +6,12 @@ import {
   inMemoryPersistence,
   getAuth
 } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  doc, 
+  getDocFromServer 
+} from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -69,18 +74,27 @@ if (!authInstance) {
 
 export const auth = authInstance;
 
-// Safe Firestore Database initialization
+// Safe Firestore Database initialization with ignoreUndefinedProperties
 let dbInstance: any;
 
 try {
-  dbInstance = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  // Using initializeFirestore with ignoreUndefinedProperties prevents crashes from missing optional fields
+  dbInstance = initializeFirestore(app, {
+    ignoreUndefinedProperties: true
+  }, firebaseConfig.firestoreDatabaseId);
 } catch (error) {
-  console.warn("Firebase Firestore: Custom DB initialization failed (likely IndexedDB/storage block). Falling back to basic getFirestore.", error);
+  console.warn("Firebase Firestore: initializeFirestore custom DB failed, trying getFirestore with custom DB:", error);
   try {
-    dbInstance = getFirestore(app);
+    dbInstance = getFirestore(app, firebaseConfig.firestoreDatabaseId);
   } catch (secondaryError) {
-    console.error("Firebase Firestore: Severe initialization failure.", secondaryError);
-    throw secondaryError;
+    console.warn("Firebase Firestore: Falling back to default DB initialization:", secondaryError);
+    try {
+      dbInstance = initializeFirestore(app, {
+        ignoreUndefinedProperties: true
+      });
+    } catch (finalErr) {
+      dbInstance = getFirestore(app);
+    }
   }
 }
 

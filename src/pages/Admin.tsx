@@ -71,6 +71,9 @@ type Booking = {
   createdAt: Timestamp;
   dob?: string;
   adminNote?: string;
+  isEmergencyBooking?: boolean;
+  intakeSkipped?: boolean;
+  intakeData?: any;
 };
 
 type Questionnaire = {
@@ -864,7 +867,7 @@ export default function Admin() {
                     </td>
                     <td className="px-8 py-6">
                       {activeTab === 'bookings' ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1.5 items-start">
                           <span className={cn(
                             "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
                             (item as Booking).status === 'pending' ? "bg-yellow-50 text-yellow-600" :
@@ -873,6 +876,15 @@ export default function Admin() {
                           )}>
                             {(item as Booking).status}
                           </span>
+                          {(item as Booking).isEmergencyBooking || (item as Booking).intakeSkipped ? (
+                            <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                              🚨 Emergency (Skipped Intake)
+                            </span>
+                          ) : (item as Booking).intakeData ? (
+                            <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                              ✓ Intake Completed
+                            </span>
+                          ) : null}
                         </div>
                       ) : activeTab === 'faqs' ? (
                         <span className={cn(
@@ -1034,15 +1046,143 @@ export default function Admin() {
  
                   <div className="space-y-8">
                     {activeTab === 'bookings' ? (
-                      <div className="grid grid-cols-2 gap-6 bg-brand-grey/50 p-8 rounded-[2rem]">
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Treatment</p>
-                          <p className="font-bold">{(selectedItem as Booking).service}</p>
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-6 bg-brand-grey/50 p-8 rounded-[2rem]">
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Treatment</p>
+                            <p className="font-bold">{(selectedItem as Booking).service}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Preferred Slot</p>
+                            <p className="font-bold">{(selectedItem as Booking).preferredDate} ({(selectedItem as Booking).preferredTime})</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Preferred Slot</p>
-                          <p className="font-bold">{(selectedItem as Booking).preferredDate} ({(selectedItem as Booking).preferredTime})</p>
-                        </div>
+
+                        {/* Emergency Bypass Notice */}
+                        {((selectedItem as Booking).isEmergencyBooking || (selectedItem as Booking).intakeSkipped) && (
+                          <div className="bg-red-50/90 border-2 border-red-200 p-6 rounded-[2rem] flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                              <AlertCircle className="w-5 h-5 animate-pulse" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
+                                  Urgent Triage
+                                </span>
+                                <h4 className="text-sm font-bold text-red-950">
+                                  Emergency Booking (Intake Form Skipped)
+                                </h4>
+                              </div>
+                              <p className="text-xs text-red-800 mt-1.5 leading-relaxed">
+                                Patient bypassed the clinical screening form due to an emergency or urgent requirement. Triage screening must be conducted verbally upon phone or on-site contact.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Attached Medical Intake File */}
+                        {(selectedItem as Booking).intakeData && (
+                          <div className="bg-green-50/50 border border-green-200 rounded-[2rem] p-6 space-y-6">
+                            <div className="flex items-center justify-between pb-3 border-b border-green-200">
+                              <div className="flex items-center gap-2 text-green-800">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <h4 className="font-bold text-sm">Attached Patient Medical Intake Dossier</h4>
+                              </div>
+                              <button
+                                onClick={() => downloadQuestionnairePDF((selectedItem as Booking).intakeData)}
+                                className="px-4 py-2 bg-brand-red text-white text-xs font-bold rounded-full hover:bg-brand-red-dark transition-all flex items-center gap-2 shadow-sm"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Download PDF
+                              </button>
+                            </div>
+
+                            {/* Section 1 */}
+                            <div className="space-y-2 text-sm">
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">1. Primary Complaint</p>
+                              <p className="bg-white p-3.5 rounded-xl border border-green-100 text-gray-800 text-xs leading-relaxed">
+                                {(selectedItem as Booking).intakeData.primaryComplaint || "None reported"}
+                              </p>
+                              {(selectedItem as Booking).intakeData.activeSymptoms?.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Active Symptoms:</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {(selectedItem as Booking).intakeData.activeSymptoms.map((sym: string) => (
+                                      <span key={sym} className="px-2.5 py-1 bg-white rounded-lg border border-red-200 text-xs font-medium text-red-800">
+                                        {sym === "Severe pain" && (selectedItem as Booking).intakeData.severePainLocation
+                                          ? `Severe Pain: ${(selectedItem as Booking).intakeData.severePainLocation}`
+                                          : sym}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Section 2: PMH */}
+                            <div className="space-y-2 text-sm pt-3 border-t border-green-100">
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">2. Past Medical History (PMH)</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <strong className="text-gray-700">Cardiovascular: </strong>
+                                  <span className="text-gray-600">{(selectedItem as Booking).intakeData.pmhCardiovascular?.join(", ") || "None"}</span>
+                                </div>
+                                <div>
+                                  <strong className="text-gray-700">Respiratory: </strong>
+                                  <span className="text-gray-600">{(selectedItem as Booking).intakeData.pmhRespiratory?.join(", ") || "None"}</span>
+                                </div>
+                                <div>
+                                  <strong className="text-gray-700">Endocrine: </strong>
+                                  <span className="text-gray-600">{(selectedItem as Booking).intakeData.pmhEndocrine?.join(", ") || "None"}</span>
+                                </div>
+                                <div>
+                                  <strong className="text-gray-700">GI / Kidney: </strong>
+                                  <span className="text-gray-600">
+                                    {[...((selectedItem as Booking).intakeData.pmhGastrointestinal || []), ...((selectedItem as Booking).intakeData.pmhKidney || [])].join(", ") || "None"}
+                                  </span>
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <strong className="text-gray-700">Other / Cancer: </strong>
+                                  <span className="text-gray-600">
+                                    {(selectedItem as Booking).intakeData.pmhOther?.map((o: string) => o === "Cancer" && (selectedItem as Booking).intakeData.cancerType ? `Cancer (${(selectedItem as Booking).intakeData.cancerType})` : o).join(", ") || "None"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Section 3 & 4 */}
+                            <div className="space-y-2 text-sm pt-3 border-t border-green-100">
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">3 & 4. Surgical History & Medications</p>
+                              <p className="text-xs text-gray-700">
+                                <strong>Surgeries: </strong> 
+                                {(selectedItem as Booking).intakeData.hasSurgeries === "Yes" && (selectedItem as Booking).intakeData.surgeries?.length > 0
+                                  ? (selectedItem as Booking).intakeData.surgeries.map((s: any) => `${s.procedure} (${s.year || 'N/A'}${s.reason ? `: ${s.reason}` : ''})`).join(" • ")
+                                  : "None reported"}
+                              </p>
+                              <p className="text-xs text-gray-700">
+                                <strong>Allergies: </strong> 
+                                {(selectedItem as Booking).intakeData.hasAllergies === "Yes" ? (selectedItem as Booking).intakeData.allergyDetails : "No known allergies"}
+                              </p>
+                              <p className="text-xs text-gray-700">
+                                <strong>Current Medications: </strong> 
+                                {(selectedItem as Booking).intakeData.currentMedications || "None"}
+                              </p>
+                            </div>
+
+                            {/* Signature */}
+                            {(selectedItem as Booking).intakeData.signature && (
+                              <div className="pt-3 border-t border-green-100 flex items-center justify-between">
+                                <span className="text-xs font-bold text-gray-500 uppercase">Patient Signature Verified</span>
+                                <div className="bg-white p-2 rounded-xl border border-gray-200">
+                                  <img 
+                                    src={(selectedItem as Booking).intakeData.signature} 
+                                    alt="Patient Signature" 
+                                    className="max-h-12 mix-blend-multiply" 
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : activeTab === 'faqs' ? (
                       <div className="space-y-6">
@@ -1115,7 +1255,102 @@ export default function Admin() {
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        {((selectedItem as Questionnaire).formCategory === 'General Intake' || (selectedItem as Questionnaire).formType === 'General Intake') ? (
+                        {((selectedItem as Questionnaire).formCategory === 'Patient Medical Intake Form' || (selectedItem as Questionnaire).formType === 'Patient Medical Intake Form') ? (
+                          <>
+                            {/* Medical Intake Details */}
+                            <div className="p-6 bg-brand-grey/50 rounded-[2rem] space-y-4">
+                              <h4 className="font-bold text-sm border-b border-gray-200 pb-2 flex items-center gap-2 text-brand-red">
+                                <Stethoscope className="w-4 h-4" /> 1. Reason for Visit & Current Symptoms
+                              </h4>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <p className="text-xs text-gray-400 font-bold uppercase">Primary Complaint:</p>
+                                  <p className="font-medium text-gray-900 leading-relaxed mt-0.5">
+                                    {(selectedItem as Questionnaire).primaryComplaint || "None reported"}
+                                  </p>
+                                </div>
+                                {(selectedItem as Questionnaire).activeSymptoms && (selectedItem as Questionnaire).activeSymptoms.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-gray-400 font-bold uppercase mt-2">Active Symptoms:</p>
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                      {(selectedItem as Questionnaire).activeSymptoms.map((sym: string) => (
+                                        <span key={sym} className="px-2.5 py-1 bg-white rounded-lg border border-red-200 text-xs font-medium text-red-800">
+                                          {sym === "Severe pain" && (selectedItem as Questionnaire).severePainLocation
+                                            ? `Severe Pain (${(selectedItem as Questionnaire).severePainLocation})`
+                                            : sym}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="p-6 bg-brand-grey/50 rounded-[2rem] space-y-4">
+                              <h4 className="font-bold text-sm border-b border-gray-200 pb-2 flex items-center gap-2 text-brand-red">
+                                <Activity className="w-4 h-4" /> 2. Past Medical History (PMH)
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <p className="text-xs text-gray-400">Cardiovascular:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).pmhCardiovascular?.join(", ") || "None"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Respiratory:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).pmhRespiratory?.join(", ") || "None"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Endocrine:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).pmhEndocrine?.join(", ") || "None"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Gastrointestinal:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).pmhGastrointestinal?.join(", ") || "None"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Kidney / Urinary:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).pmhKidney?.join(", ") || "None"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Neurological / Psychiatric:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).pmhNeuroPsych?.join(", ") || "None"}</p>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <p className="text-xs text-gray-400">Other Conditions:</p>
+                                  <p className="font-medium">
+                                    {(selectedItem as Questionnaire).pmhOther?.map((o: string) => o === "Cancer" && (selectedItem as Questionnaire).cancerType ? `Cancer (${(selectedItem as Questionnaire).cancerType})` : o).join(", ") || "None"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="p-6 bg-brand-grey/50 rounded-[2rem] space-y-4">
+                              <h4 className="font-bold text-sm border-b border-gray-200 pb-2 flex items-center gap-2 text-brand-red">
+                                <ShieldCheck className="w-4 h-4" /> 3 & 4. Surgical History, Allergies & Meds
+                              </h4>
+                              <div className="space-y-3 text-sm">
+                                <div>
+                                  <p className="text-xs text-gray-400">Past Surgeries / Hospitalizations:</p>
+                                  <p className="font-medium">
+                                    {(selectedItem as Questionnaire).hasSurgeries === "Yes" && (selectedItem as Questionnaire).surgeries?.length > 0
+                                      ? (selectedItem as Questionnaire).surgeries.map((s: any) => `${s.procedure} (${s.year || 'N/A'}${s.reason ? `: ${s.reason}` : ''})`).join(" • ")
+                                      : "None reported"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Allergies (Medications, Latex, Food):</p>
+                                  <p className="font-medium">
+                                    {(selectedItem as Questionnaire).hasAllergies === "Yes" ? (selectedItem as Questionnaire).allergyDetails : "None reported"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400">Current Regular Medications:</p>
+                                  <p className="font-medium">{(selectedItem as Questionnaire).currentMedications || "None"}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        ) : ((selectedItem as Questionnaire).formCategory === 'General Intake' || (selectedItem as Questionnaire).formType === 'General Intake') ? (
                           <>
                             <div className="p-6 bg-brand-grey/50 rounded-[2rem] space-y-4">
                               <h4 className="font-bold text-sm border-b border-gray-200 pb-2 flex items-center gap-2">
@@ -1243,7 +1478,7 @@ export default function Admin() {
                               <img 
                                 src={(selectedItem as Questionnaire).signature} 
                                 alt="Signature" 
-                                className="max-h-24 mix-blend-multiply h-auto mx-auto"
+                                className="max-h-24 mix-blend-multiply h-auto mx-auto" 
                                 referrerPolicy="no-referrer"
                               />
                             </div>
@@ -1258,7 +1493,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div className="p-8 border-t border-gray-50 flex items-center justify-center gap-4">
-                  {activeTab === 'questionnaires' && (
+                  {activeTab === 'questionnaires' ? (
                     <button 
                       onClick={() => downloadQuestionnairePDF(selectedItem as any)}
                       className="bg-brand-red text-white py-3.5 px-8 rounded-full font-bold shadow-lg shadow-brand-red/15 hover:bg-brand-red-dark transition-all flex items-center justify-center gap-2 text-sm"
@@ -1266,7 +1501,15 @@ export default function Admin() {
                       <Download className="w-4 h-4" />
                       Download Patient File (PDF)
                     </button>
-                  )}
+                  ) : activeTab === 'bookings' && (selectedItem as Booking).intakeData ? (
+                    <button 
+                      onClick={() => downloadQuestionnairePDF((selectedItem as Booking).intakeData)}
+                      className="bg-brand-red text-white py-3.5 px-8 rounded-full font-bold shadow-lg shadow-brand-red/15 hover:bg-brand-red-dark transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Intake Dossier (PDF)
+                    </button>
+                  ) : null}
                   <button 
                     onClick={() => setSelectedItem(null)}
                     className="text-gray-500 font-bold px-12 py-3.5 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all text-sm"

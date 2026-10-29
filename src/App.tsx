@@ -39,6 +39,7 @@ function AnimatedRoutes() {
         <Route path="/services" element={<PageTransition><Services /></PageTransition>} />
         <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
         <Route path="/booking" element={<PageTransition><Booking /></PageTransition>} />
+        <Route path="/intake" element={<PageTransition><Booking /></PageTransition>} />
         <Route path="/questionnaire" element={<PageTransition><Questionnaire /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><Admin /></PageTransition>} />
         <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />

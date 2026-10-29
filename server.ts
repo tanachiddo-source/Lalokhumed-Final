@@ -127,17 +127,34 @@ async function startServer() {
       let html = "";
 
       if (type === "booking") {
-        subject = `New Booking: ${data.fullName}`;
+        const isEmergency = data.isEmergency || data.intakeSkipped;
+        subject = isEmergency 
+          ? `🚨 URGENT EMERGENCY BOOKING: ${data.fullName}` 
+          : `New Appointment Booking: ${data.fullName}`;
         html = `
-          <h1>New Booking Notification</h1>
-          <p><strong>Name:</strong> ${data.fullName}</p>
-          <p><strong>Service:</strong> ${data.service}</p>
-          <p><strong>Date:</strong> ${data.preferredDate}</p>
-          <p><strong>Time:</strong> ${data.preferredTime}</p>
-          <p><strong>Phone:</strong> ${data.phone}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <br/>
-          <p><a href="https://${req.get('host')}/admin">View in Admin Portal</a></p>
+          <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+            <h1 style="color: ${isEmergency ? '#DF2127' : '#1A1A1B'}; font-size: 22px;">
+              ${isEmergency ? "🚨 Emergency Booking Request" : "New Booking Request"}
+            </h1>
+            ${isEmergency ? `
+              <div style="background-color: #fdf2f2; border-left: 4px solid #DF2127; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+                <strong style="color: #DF2127;">URGENT NOTICE:</strong> Patient bypassed the medical intake form for emergency triage. Conduct verbal screening immediately upon contact.
+              </div>
+            ` : data.hasIntake ? `
+              <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+                <strong style="color: #16a34a;">CLINICAL DOSSIER ATTACHED:</strong> Patient completed their digital Medical Intake Form. View or download the PDF in the Admin Portal.
+              </div>
+            ` : ''}
+            <p><strong>Name:</strong> ${data.fullName}</p>
+            <p><strong>Service:</strong> ${data.service}</p>
+            <p><strong>Date:</strong> ${data.preferredDate}</p>
+            <p><strong>Time:</strong> ${data.preferredTime}</p>
+            <p><strong>Phone:</strong> ${data.phone}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            ${data.address ? `<p><strong>Address:</strong> ${data.address}</p>` : ''}
+            <br/>
+            <a href="https://${req.get('host')}/admin" style="display: inline-block; background-color: #DF2127; color: white; padding: 12px 24px; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 13px;">View in Admin Portal</a>
+          </div>
         `;
       } else if (type === "questionnaire") {
         subject = `New Questionnaire: ${data.fullName} (${data.formCategory})`;

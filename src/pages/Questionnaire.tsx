@@ -1,10 +1,14 @@
-import { useForm, Controller } from "react-hook-form";
-import { ShieldCheck, HeartPulse, Stethoscope, User, AlertCircle, CheckCircle2, Loader2, ClipboardList, Briefcase, Activity, Calendar, Eraser, PenTool } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { ShieldCheck, HeartPulse, Stethoscope, User, AlertCircle, CheckCircle2, Loader2, ClipboardList, Activity, Download, FileText, Eraser, PenTool } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import SignaturePad from "signature_pad";
 import { cn } from "@/src/lib/utils";
 import { db, handleFirestoreError, OperationType } from "@/src/lib/firebase";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { sanitizeForFirestore } from "@/src/lib/firestoreUtils";
+import MedicalIntakeForm from "@/src/components/MedicalIntakeForm";
+import { MedicalIntakeData } from "@/src/types/medicalIntake";
+import { downloadQuestionnairePDF } from "@/src/utils/pdfGenerator";
 
 type IVQuestionnaireData = {
   fullName: string;
@@ -57,7 +61,7 @@ type GeneralIntakeData = {
   formType: "General Intake";
 };
 
-type FormState = 'selection' | 'iv' | 'general';
+type FormState = 'selection' | 'medical' | 'iv' | 'general';
 
 const MEDICAL_CONDITIONS_OPTIONS = [
   "Asthma",
@@ -72,6 +76,7 @@ const MEDICAL_CONDITIONS_OPTIONS = [
 export default function Questionnaire() {
   const [formType, setFormType] = useState<FormState>('selection');
   const [submitted, setSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
@@ -231,11 +236,11 @@ export default function Questionnaire() {
     
     try {
       const questionnaireRef = doc(collection(db, "questionnaires"));
-      const questionnaireData = {
+      const questionnaireData = sanitizeForFirestore({
         ...data,
         createdAt: serverTimestamp(),
         formCategory: formType === 'iv' ? 'IV Therapy' : 'General Intake'
-      };
+      });
       await setDoc(questionnaireRef, questionnaireData);
 
       // Send email alert asynchronously in the background to avoid blocking submission
@@ -316,22 +321,82 @@ export default function Questionnaire() {
     }
   };
 
+  const handleMedicalIntakeSubmit = async (data: MedicalIntakeData) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const questionnaireRef = doc(collection(db, "questionnaires"));
+      const questionnaireData = {
+        ...data,
+        createdAt: serverTimestamp(),
+        formCategory: "Patient Medical Intake Form"
+      };
+      await setDoc(questionnaireRef, questionnaireData);
+
+      setSubmittedData({
+        ...data,
+        formCategory: "Patient Medical Intake Form"
+      });
+
+      // Send email alert asynchronously
+      fetch("/api/send-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          type: "questionnaire", 
+          data: {
+            fullName: data.fullName,
+            email: data.email,
+            phone: data.phone,
+            formCategory: "Patient Medical Intake Form"
+          } 
+        })
+      }).catch((err) => console.error("Notification failed", err));
+
+      setSubmitted(true);
+      window.scrollTo(0, 0);
+    } catch (error) {
+      setSubmitError("There was an error saving your intake form. Please try again or contact us directly.");
+      handleFirestoreError(error, OperationType.WRITE, "questionnaires");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (submitted) {
     return (
-      <div className="pt-20 min-h-screen flex items-center justify-center bg-brand-grey/30">
+      <div className="pt-24 min-h-screen flex items-center justify-center bg-brand-grey/30 pb-20">
         <div className="max-w-xl w-full px-4 text-center">
           <div className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          <h1 className="text-4xl font-serif mb-6">Form Submitted Successfully</h1>
+          <h1 className="text-4xl font-serif mb-4 text-brand-text">Form Submitted Successfully</h1>
           <p className="text-gray-500 text-lg mb-8 leading-relaxed">
-            Your clinical information has been received. Our team will review your details to ensure the best possible care for your visit.
+            Your clinical information has been safely received. Our practitioners will review your dossier to ensure optimal clinical care for your appointment.
           </p>
-          <div className="flex flex-col gap-4">
-              <a href="/booking" className="inline-block bg-brand-red text-white py-4 px-10 rounded-full font-bold hover:shadow-xl transition-all">
-                Proceed to Booking
-              </a>
-              <a href="/" className="text-gray-400 hover:text-brand-text transition-colors">Return to Home</a>
+
+          {submittedData && (
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-8 flex items-center justify-between gap-4">
+              <div className="text-left">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Medical Record</p>
+                <p className="text-sm font-semibold text-gray-800">{submittedData.fullName || "Patient"}</p>
+              </div>
+              <button
+                onClick={() => downloadQuestionnairePDF(submittedData)}
+                className="px-5 py-2.5 rounded-full bg-brand-red text-white text-xs font-bold hover:bg-brand-red-dark transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Download className="w-4 h-4" /> Download PDF File
+              </button>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/booking" className="inline-block bg-brand-red text-white py-4 px-10 rounded-full font-bold hover:shadow-xl transition-all">
+              Proceed to Booking
+            </a>
+            <a href="/" className="inline-block bg-white text-gray-700 py-4 px-10 rounded-full font-bold border border-gray-200 hover:bg-gray-50 transition-all">
+              Return to Home
+            </a>
           </div>
         </div>
       </div>
@@ -340,42 +405,111 @@ export default function Questionnaire() {
 
   if (formType === 'selection') {
     return (
-      <div className="pt-32 bg-brand-grey/20 min-h-screen">
-        <div className="max-w-4xl mx-auto px-4">
+      <div className="pt-32 bg-brand-grey/20 min-h-screen pb-20">
+        <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-16 px-4">
             <ClipboardList className="w-16 h-16 text-brand-red mx-auto mb-6" />
-            <h1 className="text-5xl font-serif text-brand-text mb-6">Patient Forms</h1>
+            <h1 className="text-5xl font-serif text-brand-text mb-6">Patient Forms & Clinical Intake</h1>
             <p className="text-gray-500 text-xl leading-relaxed italic max-w-2xl mx-auto">
               Please select the form most relevant to your visit today. This information ensures your safety and helps us tailor our clinical services to your needs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20 px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20 px-4">
+            {/* 1. Patient Medical Intake Form */}
             <button 
-              onClick={() => setFormType('general')}
-              className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100 text-left hover:scale-[1.02] transition-all group"
+              onClick={() => setFormType('medical')}
+              className="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-brand-red/20 text-left hover:scale-[1.02] transition-all group relative overflow-hidden flex flex-col justify-between"
             >
-              <div className="w-14 h-14 bg-brand-red/5 text-brand-red rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-red group-hover:text-white transition-all">
-                 <User className="w-7 h-7" />
+              <div className="absolute top-0 right-0 bg-brand-red text-white text-[9px] font-black uppercase tracking-wider py-1 px-4 rounded-bl-xl">
+                Primary Clinical Form
               </div>
-              <h3 className="text-2xl font-serif mb-4">General Client Intake</h3>
-              <p className="text-gray-500 mb-8 leading-relaxed">Required for all new patients seeking general wellness consultations, checkups, or non-IV related therapies.</p>
-              <span className="text-brand-red font-bold flex items-center gap-2">Start Form <ShieldCheck className="w-4 h-4" /></span>
+              <div>
+                <div className="w-14 h-14 bg-brand-red/5 text-brand-red rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-red group-hover:text-white transition-all">
+                  <FileText className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-serif font-bold mb-3">Patient Medical Intake</h3>
+                <p className="text-gray-500 text-xs mb-6 leading-relaxed">
+                  Screening for primary complaints, active symptoms, medical & surgical history, and current medications.
+                </p>
+              </div>
+              <span className="text-brand-red font-bold text-xs flex items-center gap-2 pt-4 border-t border-gray-100">
+                Start Medical Intake <ShieldCheck className="w-4 h-4" />
+              </span>
             </button>
 
+            {/* 2. General Client Intake */}
+            <button 
+              onClick={() => setFormType('general')}
+              className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 text-left hover:scale-[1.02] transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-14 h-14 bg-brand-red/5 text-brand-red rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-red group-hover:text-white transition-all">
+                  <User className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-serif font-bold mb-3">General Client Intake</h3>
+                <p className="text-gray-500 text-xs mb-6 leading-relaxed">
+                  Patient personal identification, medical scheme / health insurance membership, and contact registration.
+                </p>
+              </div>
+              <span className="text-brand-red font-bold text-xs flex items-center gap-2 pt-4 border-t border-gray-100">
+                Start General Intake <ShieldCheck className="w-4 h-4" />
+              </span>
+            </button>
+
+            {/* 3. IV Therapy Questionnaire */}
             <button 
               onClick={() => setFormType('iv')}
-              className="bg-white p-10 rounded-[3rem] shadow-xl border-2 border-brand-red/10 text-left hover:scale-[1.02] transition-all group"
+              className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 text-left hover:scale-[1.02] transition-all group flex flex-col justify-between"
             >
-              <div className="w-14 h-14 bg-brand-red/5 text-brand-red rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-red group-hover:text-white transition-all">
-                 <HeartPulse className="w-7 h-7" />
+              <div>
+                <div className="w-14 h-14 bg-brand-red/5 text-brand-red rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-red group-hover:text-white transition-all">
+                  <HeartPulse className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-serif font-bold mb-3">IV Therapy Screening</h3>
+                <p className="text-gray-500 text-xs mb-6 leading-relaxed">
+                  Specific screening for Intravenous Vitamin and Mineral drip eligibility, lifestyle and infusion goals.
+                </p>
               </div>
-              <h3 className="text-2xl font-serif mb-4">IV Therapy Questionnaire</h3>
-              <p className="text-gray-500 mb-8 leading-relaxed">Specific medical screening for patients seeking Intravenous Vitamin or Mineral therapy to ensure safety and eligibility.</p>
-              <span className="text-brand-red font-bold flex items-center gap-2">Start Form <ShieldCheck className="w-4 h-4" /></span>
+              <span className="text-brand-red font-bold text-xs flex items-center gap-2 pt-4 border-t border-gray-100">
+                Start IV Screening <ShieldCheck className="w-4 h-4" />
+              </span>
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (formType === 'medical') {
+    return (
+      <div className="pt-20 bg-brand-grey/20 pb-40">
+        <section className="py-14 bg-white border-b border-gray-100 mb-12">
+          <div className="max-w-4xl mx-auto px-4">
+            <button 
+              onClick={() => setFormType('selection')}
+              className="text-gray-400 hover:text-brand-red mb-6 flex items-center gap-2 font-medium transition-all text-sm"
+            >
+              ← Back to form selection
+            </button>
+          </div>
+        </section>
+
+        <div className="max-w-4xl mx-auto px-4">
+          <MedicalIntakeForm
+            onComplete={handleMedicalIntakeSubmit}
+            isPreBooking={false}
+          />
+        </div>
+
+        {submitError && (
+          <div className="max-w-4xl mx-auto px-4 mt-8">
+            <div className="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 flex items-center gap-4">
+              <AlertCircle className="w-6 h-6 shrink-0" />
+              <p className="font-bold">{submitError}</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -385,21 +519,21 @@ export default function Questionnaire() {
       {/* Header */}
       <section className="py-20 bg-white border-b border-gray-100 mb-12">
         <div className="max-w-4xl mx-auto px-4">
-           <button 
-             onClick={() => setFormType('selection')}
-             className="text-gray-400 hover:text-brand-red mb-8 flex items-center gap-2 font-medium transition-all"
-           >
-             ← Back to selection
-           </button>
-           <div className="text-center">
-             <ShieldCheck className="w-12 h-12 text-brand-red mx-auto mb-6" />
-             <h1 className="text-4xl md:text-6xl font-serif text-brand-text mb-6">
-               {formType === 'iv' ? 'IV Therapy Questionnaire' : 'General Client Intake'}
-             </h1>
-             <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed italic">
-               "Confidentiality Notice: The information provided below will be used to ensure your safety and manage your clinical records securely."
-             </p>
-           </div>
+          <button 
+            onClick={() => setFormType('selection')}
+            className="text-gray-400 hover:text-brand-red mb-8 flex items-center gap-2 font-medium transition-all"
+          >
+            ← Back to selection
+          </button>
+          <div className="text-center">
+            <ShieldCheck className="w-12 h-12 text-brand-red mx-auto mb-6" />
+            <h1 className="text-4xl md:text-6xl font-serif text-brand-text mb-6">
+              {formType === 'iv' ? 'IV Therapy Questionnaire' : 'General Client Intake'}
+            </h1>
+            <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed italic">
+              "Confidentiality Notice: The information provided below will be used to ensure your safety and manage your clinical records securely."
+            </p>
+          </div>
         </div>
       </section>
 

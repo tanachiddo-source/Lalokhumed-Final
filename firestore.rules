@@ -53,13 +53,13 @@ service cloud.firestore {
       // Public can book
       allow create: if isValidBooking(incoming()) && 
                       incoming().status == 'pending' &&
-                      incoming().createdAt == request.time;
+                      (incoming().createdAt == request.time || incoming().createdAt is timestamp);
       
       // Only admins can see and update bookings
       allow read: if isAdmin();
       allow update: if isAdmin() && (
         // For updates by admins, we only enforce type safety on affected keys
-        incoming().updatedAt == request.time
+        (incoming().updatedAt == request.time || incoming().updatedAt is timestamp)
       );
       allow delete: if isAdmin();
     }
@@ -68,12 +68,12 @@ service cloud.firestore {
       function isValidQuestionnaire(data) {
         return (data.get('fullName', '') is string) && (data.get('fullName', '').size() <= 200) &&
                (data.get('email', '') is string) && (data.get('email', '').size() <= 200) &&
-               (data.get('signature', '') is string) && (data.get('signature', '').size() <= 500000);
+               (data.get('signature', '') is string) && (data.get('signature', '').size() <= 2000000);
       }
 
       // Public can submit
       allow create: if isValidQuestionnaire(incoming()) && 
-                      incoming().createdAt == request.time;
+                      (incoming().createdAt == request.time || incoming().createdAt is timestamp);
       
       // Clinical records are read-only for admins and immutable
       allow read: if isAdmin();
@@ -96,7 +96,7 @@ service cloud.firestore {
       // Public can submit questions
       allow create: if (incoming().question is string) && (incoming().question.size() <= 1000) &&
                       (incoming().email is string) && (incoming().email.size() <= 200) &&
-                      incoming().createdAt == request.time;
+                      (incoming().createdAt == request.time || incoming().createdAt is timestamp);
       // Admins can manage them
       allow read, update, delete: if isAdmin();
     }

@@ -57,7 +57,7 @@
     },
     "Booking": {
       "title": "Appointment Booking",
-      "description": "Patient booking request for IV therapy",
+      "description": "Patient booking request for clinical care, wellness drips, or concierge",
       "type": "object",
       "properties": {
         "fullName": { "type": "string" },
@@ -66,7 +66,13 @@
         "service": { "type": "string" },
         "preferredTime": { "type": "string" },
         "preferredDate": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "address": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled", "suggested"] },
+        "isEmergencyBooking": { "type": "boolean" },
+        "intakeSkipped": { "type": "boolean" },
+        "intakeData": { "type": "object" },
+        "adminNote": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["fullName", "email", "phone", "service", "preferredTime", "preferredDate"]
