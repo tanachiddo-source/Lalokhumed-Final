@@ -46,6 +46,11 @@ const faqs: FAQItem[] = [
   },
   {
     category: 'medical',
+    question: "How do Virtual Consultations work at LALOKHUMED, and what is the fee?",
+    answer: "Our Virtual Consultations are available at R375. A telephonic voice call is the clinical mainstay for virtual appointments, allowing you to discuss symptoms, review test results, obtain sick certificates, or renew chronic scripts with our doctor. A video call option is available if visual examination of a physical symptom is clinically required. Once you submit a booking, our clinic confirms your session and connects with you directly via WhatsApp."
+  },
+  {
+    category: 'medical',
     question: "How does a preventative wellness check or biometric screening work?",
     answer: "A wellness check-up evaluates crucial biometric indicators, including your blood pressure monitoring, blood glucose levels, body composition analysis, cholesterol, and a review of family history. Based on your results, we construct a personalized health roadmap to support your long-term wellness."
   },

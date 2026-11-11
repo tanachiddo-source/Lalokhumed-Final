@@ -128,17 +128,24 @@ async function startServer() {
 
       if (type === "booking") {
         const isEmergency = data.isEmergency || data.intakeSkipped;
+        const isVirtual = data.service && (data.service.toLowerCase().includes("virtual") || data.service.toLowerCase().includes("telephon"));
         subject = isEmergency 
           ? `🚨 URGENT EMERGENCY BOOKING: ${data.fullName}` 
+          : isVirtual
+          ? `📞 New Virtual Consultation (R375): ${data.fullName}`
           : `New Appointment Booking: ${data.fullName}`;
         html = `
           <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-            <h1 style="color: ${isEmergency ? '#DF2127' : '#1A1A1B'}; font-size: 22px;">
-              ${isEmergency ? "🚨 Emergency Booking Request" : "New Booking Request"}
+            <h1 style="color: ${isEmergency ? '#DF2127' : isVirtual ? '#6b21a8' : '#1A1A1B'}; font-size: 22px;">
+              ${isEmergency ? "🚨 Emergency Booking Request" : isVirtual ? "📞 Virtual Consultation Request (R375)" : "New Booking Request"}
             </h1>
             ${isEmergency ? `
               <div style="background-color: #fdf2f2; border-left: 4px solid #DF2127; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
                 <strong style="color: #DF2127;">URGENT NOTICE:</strong> Patient bypassed the medical intake form for emergency triage. Conduct verbal screening immediately upon contact.
+              </div>
+            ` : isVirtual ? `
+              <div style="background-color: #faf5ff; border-left: 4px solid #9333ea; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+                <strong style="color: #7e22ce;">VIRTUAL CONSULTATION (R375):</strong> Telephonic voice call is the clinical mainstay. Video call only if visual examination is necessary. Send confirmation to the patient's WhatsApp number (+${data.phone}) via the Admin Portal.
               </div>
             ` : data.hasIntake ? `
               <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
@@ -153,7 +160,7 @@ async function startServer() {
             <p><strong>Email:</strong> ${data.email}</p>
             ${data.address ? `<p><strong>Address:</strong> ${data.address}</p>` : ''}
             <br/>
-            <a href="https://${req.get('host')}/admin" style="display: inline-block; background-color: #DF2127; color: white; padding: 12px 24px; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 13px;">View in Admin Portal</a>
+            <a href="https://${req.get('host')}/admin" style="display: inline-block; background-color: ${isVirtual ? '#7e22ce' : '#DF2127'}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 20px; font-weight: bold; font-size: 13px;">Manage in Admin Portal</a>
           </div>
         `;
       } else if (type === "questionnaire") {

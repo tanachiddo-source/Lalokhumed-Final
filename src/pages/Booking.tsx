@@ -15,7 +15,10 @@ import {
   Download, 
   ArrowLeft,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  PhoneCall,
+  Video,
+  MessageSquare
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { db, handleFirestoreError, OperationType } from "@/src/lib/firebase";
@@ -69,12 +72,18 @@ export default function Booking() {
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   
-  const [serviceCategory, setServiceCategory] = useState<'medical' | 'wellness' | 'concierge'>('medical');
+  const [serviceCategory, setServiceCategory] = useState<'medical' | 'virtual' | 'wellness' | 'concierge'>('medical');
+
+  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<BookingData>();
 
   useEffect(() => {
     const cat = searchParams.get("category");
-    if (cat === 'medical' || cat === 'wellness' || cat === 'concierge') {
+    if (cat === 'medical' || cat === 'virtual' || cat === 'wellness' || cat === 'concierge') {
       setServiceCategory(cat);
+    }
+    const serviceParam = searchParams.get("service");
+    if (serviceParam) {
+      setValue("service", serviceParam);
     }
     const emergencyParam = searchParams.get("emergency");
     if (emergencyParam === "true" || searchParams.get("skip") === "emergency") {
@@ -82,9 +91,7 @@ export default function Booking() {
       setIntakeSkipped(true);
       setCurrentStep("schedule");
     }
-  }, [searchParams]);
-
-  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<BookingData>();
+  }, [searchParams, setValue]);
   
   // Clear submit error when any field changes
   useEffect(() => {
@@ -97,8 +104,15 @@ export default function Booking() {
   const selectedDate = watch("preferredDate");
   const selectedTime = watch("preferredTime");
 
+  const virtualServices = [
+    "Virtual Consultation - Telephonic Voice Call (R375)",
+    "Virtual Consultation - Video Call [If Necessary] (R375)"
+  ];
+
   const medicalServices = [
     "General Consultations (From R800)",
+    "Virtual Consultation - Telephonic Voice Call (R375)",
+    "Virtual Consultation - Video Call [If Necessary] (R375)",
     "Acute Illness Care",
     "Chronic Disease Management",
     "Preventative Health & Wellness Checks",
@@ -506,13 +520,15 @@ export default function Booking() {
 
               <h1 className="text-4xl md:text-6xl font-serif text-brand-text mb-6 leading-tight">
                 Select Your <span className="text-brand-red italic">
-                  {serviceCategory === 'concierge' ? 'Concierge Slot' : 'Consultation Slot'}
+                  {serviceCategory === 'concierge' ? 'Concierge Slot' : serviceCategory === 'virtual' ? 'Virtual Care Slot' : 'Consultation Slot'}
                 </span>.
               </h1>
               
               <p className="text-lg text-gray-500 mb-8 leading-relaxed">
                 {serviceCategory === 'concierge' 
                   ? "Our clinical doctor team brings world-class medical consultations and tailored IV therapy directly to your Bryanston residence or office."
+                  : serviceCategory === 'virtual'
+                  ? "Convenient remote clinical consultations from anywhere in South Africa. Telephonic voice calls are the clinical mainstay, with video calls arranged if visual inspection is required."
                   : "Choose your preferred primary medical care consultation or wellness therapy slot at our 273 Bryanston Drive practice."}
               </p>
 
@@ -658,7 +674,7 @@ export default function Booking() {
 
                 <div className="space-y-4">
                   <label className="text-sm font-bold text-gray-700 ml-1">Appointment Category</label>
-                  <div className="grid grid-cols-3 p-1 bg-brand-grey rounded-2xl border border-gray-100/50">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 p-1 bg-brand-grey rounded-2xl border border-gray-100/50 gap-1 sm:gap-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -673,6 +689,21 @@ export default function Booking() {
                       )}
                     >
                       Primary Care
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setServiceCategory('virtual');
+                        setValue("service", "", { shouldValidate: false });
+                      }}
+                      className={cn(
+                        "py-3 text-[10px] sm:text-xs md:text-sm font-bold tracking-wide rounded-xl transition-all duration-300",
+                        serviceCategory === 'virtual' 
+                          ? "bg-white text-purple-950 shadow-sm" 
+                          : "text-gray-400 hover:text-gray-600"
+                      )}
+                    >
+                      Virtual (R375)
                     </button>
                     <button
                       type="button"
@@ -707,6 +738,19 @@ export default function Booking() {
                   </div>
                 </div>
 
+                {/* Virtual Consultation Notice & WhatsApp Stipulation */}
+                {serviceCategory === 'virtual' && (
+                  <div className="bg-purple-50 border border-purple-200/80 rounded-2xl p-4 text-xs text-purple-900 flex items-start gap-3 animate-fade-in">
+                    <PhoneCall className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Virtual Consultation Protocol (R375)</p>
+                      <p className="mt-1 text-purple-800 leading-relaxed">
+                        A voice call (telephonically) is the clinical mainstay for virtual consultations. A video call option is available if visual examination of a physical symptom is clinically required. Once booked, our clinic will review your request and send your official confirmation directly to your WhatsApp number.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 ml-1">Select Service</label>
                   <div className="relative">
@@ -714,8 +758,15 @@ export default function Booking() {
                       {...register("service", { required: true })} 
                       className={`w-full bg-brand-grey border-none rounded-2xl p-4 pr-10 focus:ring-2 focus:ring-brand-red outline-none transition-all appearance-none ${errors.service ? 'ring-2 ring-red-200' : ''}`}
                     >
-                      <option value="">Select {serviceCategory === 'medical' ? 'a medical care service' : serviceCategory === 'wellness' ? 'a wellness or IV treatment' : 'a concierge rate slot'}...</option>
-                      {(serviceCategory === 'medical' ? medicalServices : serviceCategory === 'wellness' ? wellnessServices : conciergeServices).map(s => (
+                      <option value="">Select {serviceCategory === 'medical' ? 'a medical care service' : serviceCategory === 'virtual' ? 'a virtual consultation format (R375)' : serviceCategory === 'wellness' ? 'a wellness or IV treatment' : 'a concierge rate slot'}...</option>
+                      {(serviceCategory === 'medical' 
+                        ? medicalServices 
+                        : serviceCategory === 'virtual' 
+                        ? virtualServices 
+                        : serviceCategory === 'wellness' 
+                        ? wellnessServices 
+                        : conciergeServices
+                      ).map(s => (
                         <option key={s} value={s} className="font-sans font-normal text-gray-700 py-1">
                           {s}
                         </option>

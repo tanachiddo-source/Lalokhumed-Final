@@ -45,6 +45,8 @@ import {
   Mail,
   Key,
   Phone,
+  PhoneCall,
+  Video,
   ExternalLink,
   Copy,
   Check
@@ -261,8 +263,14 @@ export default function Admin() {
 
   const initiateAction = (item: Booking, type: 'confirm' | 'cancel') => {
     let defaultMsg = "";
+    const isVirtual = item.service?.toLowerCase().includes("virtual") || item.service?.toLowerCase().includes("telephon");
+    
     if (type === 'confirm') {
-      defaultMsg = `Hello ${item.fullName}, your booking for ${item.service} on ${item.preferredDate} at ${item.preferredTime} is CONFIRMED. We look forward to seeing you at LALOKHUMED.`;
+      if (isVirtual) {
+        defaultMsg = `Hello ${item.fullName}, your Virtual Consultation (${item.service}) on ${item.preferredDate} at ${item.preferredTime} is CONFIRMED with LALOKHUMED.\n\nStipulation & Protocol:\n• Our doctor will call you telephonically at this WhatsApp number (${item.phone}) at your scheduled time.\n• If a video call is necessary for visual examination, a secure meeting link will be provided in this chat.\n\nThank you for choosing LALOKHUMED.`;
+      } else {
+        defaultMsg = `Hello ${item.fullName}, your booking for ${item.service} on ${item.preferredDate} at ${item.preferredTime} is CONFIRMED. We look forward to seeing you at LALOKHUMED.`;
+      }
     } else {
       defaultMsg = `Hello ${item.fullName}, we are unable to fulfill your booking for ${item.service} on ${item.preferredDate}. Please contact us to reschedule at your convenience.`;
     }
@@ -876,6 +884,11 @@ export default function Admin() {
                           )}>
                             {(item as Booking).status}
                           </span>
+                          {(item as Booking).service?.toLowerCase().includes("virtual") && (
+                            <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                              <PhoneCall className="w-2.5 h-2.5 text-purple-700" /> Virtual • R375
+                            </span>
+                          )}
                           {(item as Booking).isEmergencyBooking || (item as Booking).intakeSkipped ? (
                             <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
                               🚨 Emergency (Skipped Intake)
@@ -1057,6 +1070,28 @@ export default function Admin() {
                             <p className="font-bold">{(selectedItem as Booking).preferredDate} ({(selectedItem as Booking).preferredTime})</p>
                           </div>
                         </div>
+
+                        {/* Virtual Consultation Protocol Notice */}
+                        {((selectedItem as Booking).service?.toLowerCase().includes("virtual") || (selectedItem as Booking).service?.toLowerCase().includes("telephon")) && (
+                          <div className="bg-purple-50/90 border-2 border-purple-200 p-6 rounded-[2rem] flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-2xl bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-sm">
+                              <PhoneCall className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="bg-purple-700 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider">
+                                  Virtual Care • R375
+                                </span>
+                                <h4 className="text-sm font-bold text-purple-950">
+                                  Telephonic Voice Call (Clinical Mainstay)
+                                </h4>
+                              </div>
+                              <p className="text-xs text-purple-800 mt-1.5 leading-relaxed">
+                                <strong>Stipulation:</strong> Telephonic voice call is the primary mainstay for this consultation. A video call is available only if visual examination of a physical symptom is clinically required. Confirming this booking launches a tailored WhatsApp message directly to the patient's phone number.
+                              </p>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Emergency Bypass Notice */}
                         {((selectedItem as Booking).isEmergencyBooking || (selectedItem as Booking).intakeSkipped) && (
@@ -1637,6 +1672,31 @@ export default function Admin() {
                           <Copy className="w-3 h-3" /> {copiedLink ? "Message Copied!" : "Copy Text"}
                         </button>
                       </div>
+
+                      {/* Quick Presets for Virtual Care */}
+                      {commModal.type === 'confirm' && (commModal.booking?.service?.toLowerCase().includes("virtual") || commModal.booking?.service?.toLowerCase().includes("telephon")) && (
+                        <div className="flex flex-wrap gap-2 mb-2.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomMsg(`Hello ${commModal.booking?.fullName}, your Virtual Consultation (${commModal.booking?.service}) on ${commModal.booking?.preferredDate} at ${commModal.booking?.preferredTime} is CONFIRMED with LALOKHUMED.\n\nStipulation & Protocol:\n• Our doctor will call you telephonically at this WhatsApp number (${recipientPhone || commModal.booking?.phone}) at your scheduled time.\n• If a video call is necessary for visual examination, a secure meeting link will be provided in this chat.\n\nThank you for choosing LALOKHUMED.`);
+                            }}
+                            className="text-[10px] bg-purple-50 hover:bg-purple-100 text-purple-900 px-2.5 py-1 rounded-lg font-bold border border-purple-200 transition-colors flex items-center gap-1"
+                          >
+                            <PhoneCall className="w-3 h-3 text-purple-700" /> Voice Call Template
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomMsg(`Hello ${commModal.booking?.fullName}, your Virtual Video Consultation on ${commModal.booking?.preferredDate} at ${commModal.booking?.preferredTime} is CONFIRMED with LALOKHUMED.\n\nVideo Call Link:\n• https://meet.google.com/ [or Zoom link]\n• Please join with audio & video enabled at your scheduled time.\n\nThank you!`);
+                            }}
+                            className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-900 px-2.5 py-1 rounded-lg font-bold border border-indigo-200 transition-colors flex items-center gap-1"
+                          >
+                            <Video className="w-3 h-3 text-indigo-700" /> Video Call Link Template
+                          </button>
+                        </div>
+                      )}
+
                       <textarea 
                         value={customMsg}
                         onChange={(e) => setCustomMsg(e.target.value)}

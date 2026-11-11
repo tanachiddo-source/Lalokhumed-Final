@@ -12,11 +12,52 @@ import {
   Heart, 
   User, 
   FileText,
-  MapPin
+  MapPin,
+  PhoneCall,
+  Video,
+  Smartphone,
+  MessageSquare
 } from "lucide-react";
 import { SEO } from "../components/Layout";
+import { cn } from "@/src/lib/utils";
 
 export default function Services() {
+  const consultationOptions = [
+    {
+      name: "In-Practice General Consultation",
+      price: "From R800",
+      format: "In-Person Clinic Visit",
+      badge: "In-Practice",
+      description: "Full clinical examination, physical diagnostics, vital sign assessments, and prescription care at our Bryanston practice.",
+      icon: Stethoscope,
+      stipulation: "Conducted at our 273 Bryanston Drive practice with secure parking.",
+      badgeColor: "bg-brand-red/10 text-brand-red",
+      bookingUrl: "/booking?category=medical&service=General+Consultations+(From+R800)"
+    },
+    {
+      name: "Virtual Consultation (Telephonic Voice Call)",
+      price: "R375",
+      format: "Remote Voice Call",
+      badge: "Clinical Mainstay • R375",
+      description: "Convenient remote doctor consultation conducted telephonically. Ideal for acute triage, medical advice, symptom reviews, sick certificates, and chronic repeat scripts.",
+      icon: PhoneCall,
+      stipulation: "Stipulation: A voice call (telephonically) is the clinical mainstay for remote consultations. Appointment confirmed directly to your WhatsApp number.",
+      badgeColor: "bg-purple-100 text-purple-800",
+      bookingUrl: "/booking?category=virtual&service=Virtual+Consultation+-+Telephonic+Voice+Call+(R375)"
+    },
+    {
+      name: "Virtual Consultation (Video Call - If Necessary)",
+      price: "R375",
+      format: "Remote Video Call",
+      badge: "Visual Assessment • R375",
+      description: "Doctor consultation with video link provided when visual examination of rashes, wounds, swelling, or visible physical symptoms is deemed clinically necessary.",
+      icon: Video,
+      stipulation: "Stipulation: Voice call is the mainstay; video call is utilized only if visual examination is required. Link shared to your WhatsApp number.",
+      badgeColor: "bg-indigo-100 text-indigo-800",
+      bookingUrl: "/booking?category=virtual&service=Virtual+Consultation+-+Video+Call+[If+Necessary]+(R375)"
+    }
+  ];
+
   const generalServices = [
     {
       name: "General Consultations",
@@ -113,7 +154,7 @@ export default function Services() {
     },
   ];
 
-  const [selectedService, setSelectedService] = useState<'none' | 'general' | 'concierge' | 'iv'>('none');
+  const [selectedService, setSelectedService] = useState<'none' | 'general' | 'virtual' | 'concierge' | 'iv'>('none');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -123,7 +164,7 @@ export default function Services() {
     <div className="pt-20">
       <SEO 
         title="Personalised Wellness & Medical Care | LALOKHUMED Sandton" 
-        description="Comprehensive healthcare by LALOKHUMED. General practitioner consultations, chronic health management, and custom clinical wellness programs in Bryanston, Sandton."
+        description="Comprehensive healthcare by LALOKHUMED. General practitioner consultations, virtual consultations (voice & video), chronic health management, and custom clinical wellness programs in Bryanston, Sandton."
       />
 
       {/* Header */}
@@ -136,6 +177,7 @@ export default function Services() {
                <span className="text-brand-red italic">
                  {selectedService === 'none' && "Care & Wellness"}
                  {selectedService === 'general' && "Primary Care"}
+                 {selectedService === 'virtual' && "Virtual Consultations"}
                  {selectedService === 'concierge' && "Medical Concierge"}
                  {selectedService === 'iv' && "IV Infusion Therapy"}
                </span>.
@@ -156,11 +198,11 @@ export default function Services() {
         </div>
       </section>
 
-      {/* Category Navigation Side-by-Side */}
+      {/* Category Navigation Side-by-Side (4 Pillars) */}
       {selectedService === 'none' && (
         <section className="pb-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* General Medical */}
               <div 
                 onClick={() => setSelectedService('general')}
@@ -172,7 +214,7 @@ export default function Services() {
                   </div>
                   <h3 className="text-2xl font-serif text-brand-text mb-3 leading-tight">General Primary Care</h3>
                   <p className="text-gray-500 text-sm leading-relaxed mb-6">
-                    Comprehensive medical consultations, prescription monitoring, health screenings, and preventative healthcare under expert practitioner guidance.
+                    In-person medical consultations, prescription monitoring, health screenings, and preventative healthcare under expert practitioner guidance.
                   </p>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full border border-neutral-200/50 text-[10px] uppercase font-bold tracking-wider text-brand-text mb-6">
                     In-Practice • From R800
@@ -182,6 +224,35 @@ export default function Services() {
                   className="w-full bg-white text-brand-text border border-neutral-200 hover:border-brand-red hover:bg-brand-red hover:text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 text-sm cursor-pointer"
                 >
                   Explore GP Services <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Virtual Consultations */}
+              <div 
+                onClick={() => setSelectedService('virtual')}
+                className="bg-purple-900/5 hover:bg-purple-900/10 rounded-[2.5rem] p-8 border border-purple-200/60 hover:border-purple-300 hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+              >
+                <div>
+                  <div className="p-3.5 bg-purple-600/10 text-purple-700 rounded-2xl w-fit mb-6 group-hover:bg-purple-700 group-hover:text-white transition-colors duration-300">
+                    <PhoneCall className="w-6 h-6" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
+                      Voice & Video
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-serif text-brand-text mb-3 leading-tight">Virtual Consultations</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                    Remote consultations with our doctor. Telephonic voice calls are the clinical mainstay, with video calls available if visual examination is required.
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full border border-purple-100 text-[10px] uppercase font-bold tracking-wider text-purple-800 mb-6">
+                    WhatsApp Confirmed • R375
+                  </div>
+                </div>
+                <button 
+                  className="w-full bg-white text-purple-900 border border-purple-200 hover:border-purple-700 hover:bg-purple-700 hover:text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 text-sm cursor-pointer"
+                >
+                  View Virtual Care <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -242,25 +313,92 @@ export default function Services() {
       {selectedService === 'general' && (
         <section id="general-medical" className="py-24 bg-brand-grey border-t border-b border-gray-150/80 scroll-mt-24 animate-fade-in">
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="max-w-3xl mb-16">
+            <div className="max-w-3xl mb-12">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-red/5 rounded-full text-brand-red text-xs font-bold uppercase tracking-widest mb-6">
                 Primary Medical Care
               </div>
               <h2 className="text-4xl md:text-5xl font-serif text-brand-text mb-6">General Medical Services</h2>
-              <p className="text-lg text-gray-600 leading-relaxed mb-8">
+              <p className="text-lg text-gray-600 leading-relaxed mb-6">
                 LALOKHUMED provides general practitioner care for everyday health concerns, preventative wellness, and ongoing health management in a professional clinical setting.
               </p>
+            </div>
 
-              {/* Pricing Note */}
-              <div className="bg-white border border-brand-red/10 rounded-[2rem] p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center shadow-sm">
-                <div className="p-3 bg-brand-red/10 text-brand-red rounded-xl shrink-0">
-                  <Info className="w-5 h-5 animate-pulse" />
+            {/* Consultation Alternatives Comparison Box */}
+            <div className="mb-16">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-serif text-brand-text">Consultation Formats & Alternatives</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Choose between our comprehensive in-practice examination or our convenient R375 virtual consultations.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  <span className="font-bold text-brand-text text-base block sm:inline mr-2">Fee Information:</span>
-                  General consultation fee from R800. Pricing may vary depending on medical aid availability, consultation requirements, and annual fee adjustments.
-                </p>
               </div>
+
+              {/* Consultation Format Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {consultationOptions.map((opt, i) => {
+                  const OptIcon = opt.icon;
+                  return (
+                    <div 
+                      key={i} 
+                      className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="w-12 h-12 rounded-2xl bg-brand-grey flex items-center justify-center text-brand-text">
+                            <OptIcon className="w-6 h-6 text-brand-red" />
+                          </div>
+                          <span className={cn("px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", opt.badgeColor)}>
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <h4 className="text-xl font-serif font-bold text-brand-text mb-1">{opt.name}</h4>
+                        <p className="text-lg font-bold text-brand-red mb-3">{opt.price}</p>
+                        <p className="text-xs text-gray-600 leading-relaxed mb-4">{opt.description}</p>
+                      </div>
+
+                      <div className="space-y-4 pt-4 border-t border-gray-100">
+                        <p className="text-[11px] text-gray-500 italic bg-brand-grey/50 p-3 rounded-xl border border-gray-100">
+                          {opt.stipulation}
+                        </p>
+                        <Link
+                          to={opt.bookingUrl}
+                          className="w-full bg-brand-text hover:bg-brand-red text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-colors"
+                        >
+                          Book {opt.price} <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Stipulation & WhatsApp Callout */}
+              <div className="bg-purple-50/70 border border-purple-200/80 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-700/20">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-purple-950">Virtual Consultation WhatsApp Confirmation</h4>
+                    <p className="text-xs text-purple-900/90 mt-1 max-w-2xl leading-relaxed">
+                      <strong>Stipulation:</strong> A voice call (telephonically) is the clinical mainstay for virtual consultations. A video call option is available if visual inspection is deemed clinically necessary. Once booked, our clinic manages your session and sends your official confirmation directly to your WhatsApp number.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/booking?category=virtual"
+                  className="px-6 py-3.5 bg-purple-700 hover:bg-purple-800 text-white rounded-2xl text-xs font-bold transition-all shrink-0 active:scale-95 shadow-md shadow-purple-700/20"
+                >
+                  Book Virtual Session (R375)
+                </Link>
+              </div>
+            </div>
+
+            {/* In-Clinic Care Grid Header */}
+            <div className="mb-8">
+              <h3 className="text-2xl font-serif text-brand-text mb-2">In-Clinic Clinical Scope</h3>
+              <p className="text-sm text-gray-500">Everyday family medicine and clinical procedures conducted at our Bryanston practice.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -292,6 +430,194 @@ export default function Services() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Category 2: Virtual Consultations */}
+      {selectedService === 'virtual' && (
+        <section id="virtual-consultations" className="py-24 bg-[#FAF7FB] border-t border-b border-purple-150/80 scroll-mt-24 animate-fade-in">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="max-w-3xl mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 rounded-full text-purple-800 text-xs font-bold uppercase tracking-widest mb-6">
+                <PhoneCall className="w-3.5 h-3.5 text-purple-700" /> Remote Clinical Care
+              </div>
+              <h2 className="text-4xl md:text-5xl font-serif text-brand-text mb-6">Virtual Consultations</h2>
+              <p className="text-lg text-gray-600 leading-relaxed mb-8">
+                Access professional, doctor-supervised healthcare anywhere in South Africa. Our virtual appointments provide rapid, qualified medical consultations for everyday symptoms, chronic prescription renewals, and specialist referrals.
+              </p>
+
+              {/* Stipulation Notice Card */}
+              <div className="bg-white border-2 border-purple-200 rounded-[2rem] p-6 sm:p-8 flex flex-col sm:flex-row gap-5 items-start shadow-sm">
+                <div className="p-3.5 bg-purple-700 text-white rounded-2xl shrink-0 shadow-md shadow-purple-700/20">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-base font-bold text-gray-900">Virtual Consultation Protocol & Stipulation</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    A <strong>voice call (telephonically)</strong> is the clinical mainstay for all virtual consultations. The option of a <strong>video call</strong> is available only when visual inspection of a symptom (such as a skin rash, eye condition, or lesion) is deemed clinically necessary.
+                  </p>
+                  <p className="text-xs text-purple-800 font-semibold pt-1">
+                    ✓ Managed in our clinic portal and confirmed directly to your WhatsApp number.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Virtual Services Cards: Voice Call vs Video Call */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+              {/* Option 1: Telephonic Voice Call */}
+              <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-purple-100 shadow-md flex flex-col justify-between group hover:border-purple-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:bg-purple-700 group-hover:text-white transition-colors">
+                      <PhoneCall className="w-7 h-7" />
+                    </div>
+                    <span className="px-3.5 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Mainstay • R375
+                    </span>
+                  </div>
+
+                  <h3 className="text-3xl font-serif text-brand-text mb-3">Telephonic Voice Consultation</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                    Our standard, highly effective virtual consultation format. Connect directly with our medical doctor via phone call for comprehensive medical dialogue, history taking, prescription management, and clinical guidance.
+                  </p>
+
+                  <ul className="space-y-3 mb-8 border-t border-gray-100 pt-6 text-sm text-gray-700">
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>Telephonic call initiated by our doctor at scheduled time</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>Acute sickness guidance and treatment advice</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>Chronic repeat prescriptions & digital script delivery</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>Medical certificates (sick notes) where clinically indicated</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>Laboratory and radiology referrals</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-purple-50/70 rounded-xl text-xs text-purple-900 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-purple-700 shrink-0" />
+                    <span>Booking confirmed & managed via WhatsApp</span>
+                  </div>
+                  <Link
+                    to="/booking?category=virtual&service=Virtual+Consultation+-+Telephonic+Voice+Call+(R375)"
+                    className="w-full bg-purple-700 hover:bg-purple-800 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-700/20 transition-all text-sm active:scale-95"
+                  >
+                    Book Telephonic Session (R375) <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Option 2: Video Call (If Necessary) */}
+              <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-purple-100 shadow-md flex flex-col justify-between group hover:border-purple-300 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:bg-indigo-700 group-hover:text-white transition-colors">
+                      <Video className="w-7 h-7" />
+                    </div>
+                    <span className="px-3.5 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Visual Assessment • R375
+                    </span>
+                  </div>
+
+                  <h3 className="text-3xl font-serif text-brand-text mb-3">Video Consultation</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                    Activated when visual examination of a physical symptom is necessary. If your consultation requires visual inspection of a rash, swelling, throat, or wound, our doctor provides a secure video conference link.
+                  </p>
+
+                  <ul className="space-y-3 mb-8 border-t border-gray-100 pt-6 text-sm text-gray-700">
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Visual clinical inspection of skin lesions, rashes, and swelling</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Secure video room link sent to your WhatsApp number</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Comprehensive clinical dialogue and differential diagnosis</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Prescriptions, sick leave certificates, and specialist letters</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <span>Seamless escalation to in-person care if physically needed</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-indigo-50/70 rounded-xl text-xs text-indigo-900 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-indigo-700 shrink-0" />
+                    <span>Meeting link delivered via WhatsApp</span>
+                  </div>
+                  <Link
+                    to="/booking?category=virtual&service=Virtual+Consultation+-+Video+Call+[If+Necessary]+(R375)"
+                    className="w-full bg-indigo-700 hover:bg-indigo-800 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-700/20 transition-all text-sm active:scale-95"
+                  >
+                    Book Video Session (R375) <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* How It Works 3-Step Banner */}
+            <div className="bg-white rounded-3xl p-8 border border-purple-100">
+              <h4 className="text-xl font-serif text-brand-text mb-6">How Your Virtual Consultation Works</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 font-bold flex items-center justify-center shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-gray-900 mb-1">Select Time & Book Online</h5>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Choose your preferred day and time slot with medical intake screening.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 font-bold flex items-center justify-center shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-gray-900 mb-1">WhatsApp Confirmation</h5>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Our clinic manages your booking in our portal and sends instant confirmation to your WhatsApp number.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 font-bold flex items-center justify-center shrink-0">
+                    3
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-sm text-gray-900 mb-1">Doctor Call & E-Scripts</h5>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Doctor calls you telephonically (or video if indicated). Prescriptions & certificates sent digitally.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
